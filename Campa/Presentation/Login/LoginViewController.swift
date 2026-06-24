@@ -1,6 +1,6 @@
 import UIKit
 
-final class LoginViewController: UIViewController {
+final class LoginViewController: BaseViewController {
     private enum Constants {
         static let horizontalInset: CGFloat = 30
         static let fieldHeight: CGFloat = 64
@@ -9,7 +9,6 @@ final class LoginViewController: UIViewController {
     }
 
     private let viewModel: LoginViewModel
-    private let backButton = UIButton(type: .custom)
     private let titleLabel = UILabel()
     private let emailField = IconTextField(iconName: "email")
     private let passwordField = IconTextField(iconName: "password")
@@ -29,8 +28,6 @@ final class LoginViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        configureView()
-        configureBackButton()
         configureTitleLabel()
         configureFields()
         configureForgotPasswordButton()
@@ -38,26 +35,6 @@ final class LoginViewController: UIViewController {
         configureLayout()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-    }
-
-    private func configureView() {
-        view.backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
-        navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        navigationController?.navigationBar.shadowImage = UIImage()
-        navigationController?.navigationBar.isTranslucent = true
-    }
-
-    private func configureBackButton() {
-        backButton.setImage(UIImage(named: "back"), for: .normal)
-        backButton.frame = CGRect(x: 0, y: 0, width: 36, height: 36)
-        backButton.accessibilityIdentifier = "loginBackButton"
-        backButton.addTarget(self, action: #selector(handleBackButtonTapped), for: .touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-    }
 
     private func configureTitleLabel() {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -104,6 +81,7 @@ final class LoginViewController: UIViewController {
     }
 
     private func configureLayout() {
+        self.navType = .back
         view.addSubview(titleLabel)
         view.addSubview(emailField)
         view.addSubview(passwordField)

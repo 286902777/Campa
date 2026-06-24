@@ -22,10 +22,12 @@ final class MainTabBarController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        delegate = self
         configureViewControllers()
         configureSystemTabBar()
         configureCustomTabBar()
         updateSelectedTab(index: selectedIndex)
+        updateCustomTabBarVisibility(animated: false)
     }
 
     override func viewDidLayoutSubviews() {
@@ -37,12 +39,18 @@ final class MainTabBarController: UITabBarController {
 
     private func configureViewControllers() {
         viewControllers = [
-            makeTab(HomeViewController(), title: NSLocalizedString("Home", comment: "Home tab title"), imageName: "home", selectedImageName: "home_sel"),
+            makeTab(makeNavigationController(rootViewController: HomeViewController()), title: NSLocalizedString("Home", comment: "Home tab title"), imageName: "home", selectedImageName: "home_sel"),
             makeTab(TabPlaceholderViewController(title: NSLocalizedString("Campus", comment: "Campus tab title")), title: NSLocalizedString("Campus", comment: "Campus tab title"), imageName: "build", selectedImageName: "build_sel"),
             makeTab(TabPlaceholderViewController(title: NSLocalizedString("Post", comment: "Post tab title")), title: NSLocalizedString("Post", comment: "Post tab title"), imageName: "tab_add", selectedImageName: "tab_add"),
-            makeTab(MessageListViewController(), title: NSLocalizedString("Message", comment: "Messages tab title"), imageName: "bell", selectedImageName: "bell_sel"),
-            makeTab(TabPlaceholderViewController(title: NSLocalizedString("Me", comment: "Profile tab title")), title: NSLocalizedString("Me", comment: "Profile tab title"), imageName: "user_set", selectedImageName: "user_set_sel")
+            makeTab(makeNavigationController(rootViewController: MessageListViewController()), title: NSLocalizedString("Message", comment: "Messages tab title"), imageName: "bell", selectedImageName: "bell_sel"),
+            makeTab(makeNavigationController(rootViewController: SettingsViewController()), title: NSLocalizedString("Me", comment: "Profile tab title"), imageName: "user_set", selectedImageName: "user_set_sel")
         ]
+    }
+
+    private func makeNavigationController(rootViewController: UIViewController) -> UINavigationController {
+        let navigationController = UINavigationController(rootViewController: rootViewController)
+        navigationController.delegate = self
+        return navigationController
     }
 
     private func makeTab(_ viewController: UIViewController, title: String, imageName: String, selectedImageName: String) -> UIViewController {
@@ -152,6 +160,47 @@ final class MainTabBarController: UITabBarController {
             button.isSelected = button.tag == index
         }
         centerButton.isSelected = index == 2
+        updateCustomTabBarVisibility(animated: false)
+    }
+
+    private func updateCustomTabBarVisibility(animated: Bool) {
+        let shouldHide = selectedNavigationController?.viewControllers.count ?? 1 > 1
+        setCustomTabBarHidden(shouldHide, animated: true)
+    }
+
+    private func setCustomTabBarHidden(_ hidden: Bool, animated: Bool) {
+        guard customTabBarView.isHidden != hidden else {
+            return
+        }
+
+        let alpha: CGFloat = hidden ? 0 : 1
+        let updates = {
+            self.customTabBarView.alpha = alpha
+            self.centerButton.alpha = alpha
+        }
+
+        if hidden {
+            updates()
+            customTabBarView.isHidden = true
+            centerButton.isHidden = true
+            return
+        }
+
+        customTabBarView.isHidden = false
+        centerButton.isHidden = false
+
+        guard animated else {
+            updates()
+            return
+        }
+
+        customTabBarView.alpha = 0
+        centerButton.alpha = 0
+        UIView.animate(withDuration: 0.1, animations: updates)
+    }
+
+    private var selectedNavigationController: UINavigationController? {
+        selectedViewController as? UINavigationController
     }
 
     @objc private func handleItemButtonTapped(_ sender: UIButton) {
@@ -160,6 +209,20 @@ final class MainTabBarController: UITabBarController {
 
     @objc private func handleCenterButtonTapped() {
         updateSelectedTab(index: 2)
+    }
+}
+
+extension MainTabBarController: UITabBarControllerDelegate, UINavigationControllerDelegate {
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        updateCustomTabBarVisibility(animated: false)
+    }
+
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        guard navigationController === selectedNavigationController else {
+            return
+        }
+
+        updateCustomTabBarVisibility(animated: false)
     }
 }
 

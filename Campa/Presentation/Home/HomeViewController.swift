@@ -1,16 +1,13 @@
 import UIKit
 
-final class HomeViewController: UIViewController {
+final class HomeViewController: BaseViewController {
     private enum Constants {
         static let horizontalInset: CGFloat = 20
         static let cornerRadius: CGFloat = 18
     }
 
     private let viewModel: HomeViewModel
-    private let scrollView = UIScrollView()
     private let contentView = UIView()
-    private let headerStackView = UIStackView()
-    private let titleLabel = UILabel()
     private let locationLabel = UILabel()
     private let searchContainerView = UIView()
     private let searchIconView = UIImageView()
@@ -35,8 +32,6 @@ final class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        configureView()
-        configureScrollView()
         configureHeader()
         configureSearch()
         configureFeaturedCard()
@@ -45,39 +40,18 @@ final class HomeViewController: UIViewController {
         configureLayout()
     }
 
-    private func configureView() {
-        view.backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
-    }
 
-    private func configureScrollView() {
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.alwaysBounceVertical = true
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-    }
 
     private func configureHeader() {
-        headerStackView.translatesAutoresizingMaskIntoConstraints = false
-        headerStackView.axis = .vertical
-        headerStackView.spacing = 4
-
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = viewModel.title
-        titleLabel.accessibilityIdentifier = "homeTitleLabel"
-        titleLabel.font = AppFont.bold(size: 30)
-        titleLabel.textColor = UIColor(red: 0.28, green: 0.20, blue: 0.16, alpha: 1.0)
+        self.changeNavbar(.title)
+        self.setTitleAndRight(title: viewModel.title, right: nil)
 
         locationLabel.translatesAutoresizingMaskIntoConstraints = false
         locationLabel.text = viewModel.locationTitle
         locationLabel.font = AppFont.medium(size: 12)
         locationLabel.textColor = UIColor(red: 0.48, green: 0.41, blue: 0.36, alpha: 1.0)
-
-        headerStackView.addArrangedSubview(titleLabel)
-        headerStackView.addArrangedSubview(locationLabel)
-        contentView.addSubview(headerStackView)
+        view.addSubview(contentView)
+        contentView.addSubview(locationLabel)
     }
 
     private func configureSearch() {
@@ -158,22 +132,16 @@ final class HomeViewController: UIViewController {
 
     private func configureLayout() {
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            contentView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
-            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
-            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            locationLabel.topAnchor.constraint(equalTo: navBar.topAnchor, constant: 8),
+            locationLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.horizontalInset),
+            locationLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -Constants.horizontalInset),
 
-            headerStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 18),
-            headerStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.horizontalInset),
-            headerStackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -Constants.horizontalInset),
-
-            searchContainerView.topAnchor.constraint(equalTo: headerStackView.bottomAnchor, constant: 16),
+            searchContainerView.topAnchor.constraint(equalTo: locationLabel.bottomAnchor, constant: 16),
             searchContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.horizontalInset),
             searchContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.horizontalInset),
             searchContainerView.heightAnchor.constraint(equalToConstant: 46),

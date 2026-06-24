@@ -1,15 +1,15 @@
 import UIKit
 
-final class MessagesViewController: UIViewController {
-    private enum Constants {
+final class MessagesViewController: BaseViewController {
+    fileprivate enum Constants {
         static let horizontalInset: CGFloat = 22
         static let inputHeight: CGFloat = 48
+        static let estimatedRowHeight: CGFloat = 115
+        static let rowSpacing: CGFloat = 18
     }
 
     private let viewModel: MessagesViewModel
-    private let titleLabel = UILabel()
-    private let scrollView = UIScrollView()
-    private let stackView = UIStackView()
+    private let tableView = UITableView(frame: .zero, style: .plain)
     private let inputContainerView = UIView()
     private let inputLabel = UILabel()
     private let sendButton = UIButton(type: .custom)
@@ -28,37 +28,31 @@ final class MessagesViewController: UIViewController {
         super.viewDidLoad()
 
         configureView()
-        configureTitleLabel()
         configureMessages()
         configureInputBar()
         configureLayout()
     }
 
     private func configureView() {
-        view.backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
+        self.changeNavbar(.all)
+        self.setTitleAndRight(title: "name", right: "more", rightSize: CGSize(width: 36, height: 36))
     }
 
-    private func configureTitleLabel() {
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = viewModel.title
-        titleLabel.font = AppFont.semibold(size: 21)
-        titleLabel.textColor = UIColor(red: 0.28, green: 0.20, blue: 0.16, alpha: 1.0)
-        titleLabel.textAlignment = .center
-        titleLabel.accessibilityIdentifier = "messagesTitleLabel"
-        view.addSubview(titleLabel)
+    override func rightAction() {
+        print("rightAction")
     }
-
+    
     private func configureMessages() {
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.showsVerticalScrollIndicator = false
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-        stackView.spacing = 18
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.showsVerticalScrollIndicator = false
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = Constants.estimatedRowHeight
+        tableView.dataSource = self
+        tableView.register(MessageBubbleTableViewCell.self, forCellReuseIdentifier: MessageBubbleTableViewCell.reuseIdentifier)
 
-        viewModel.messages.map(MessageBubbleView.init(message:)).forEach(stackView.addArrangedSubview)
-
-        view.addSubview(scrollView)
-        scrollView.addSubview(stackView)
+        view.addSubview(tableView)
     }
 
     private func configureInputBar() {
@@ -88,19 +82,10 @@ final class MessagesViewController: UIViewController {
 
     private func configureLayout() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 18),
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-
-            scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: -18),
-
-            stackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: Constants.horizontalInset),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -Constants.horizontalInset),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            stackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -Constants.horizontalInset * 2),
+            tableView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 24),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: -18),
 
             inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
@@ -120,15 +105,33 @@ final class MessagesViewController: UIViewController {
     }
 }
 
-private final class MessageBubbleView: UIView {
-    private let avatarImageView = UIImageView()
-    private let bubbleLabel = UILabel()
-    private let bubbleContainerView = UIView()
+extension MessagesViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        viewModel.messages.count
+    }
 
-    init(message: MessageBubble) {
-        super.init(frame: .zero)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: MessageBubbleTableViewCell.reuseIdentifier,
+            for: indexPath
+        ) as? MessageBubbleTableViewCell else {
+            return UITableViewCell()
+        }
 
-        configure(message: message)
+        cell.configure(message: viewModel.messages[indexPath.row])
+        return cell
+    }
+}
+
+private final class MessageBubbleTableViewCell: UITableViewCell {
+    static let reuseIdentifier = "MessageBubbleTableViewCell"
+
+    private let bubbleView = MessageBubbleView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+
+        configure()
     }
 
     @available(*, unavailable)
@@ -136,7 +139,64 @@ private final class MessageBubbleView: UIView {
         nil
     }
 
-    private func configure(message: MessageBubble) {
+    func configure(message: MessageBubble) {
+        bubbleView.configure(message: message)
+    }
+
+    private func configure() {
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
+
+        bubbleView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(bubbleView)
+
+        NSLayoutConstraint.activate([
+            bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: MessagesViewController.Constants.horizontalInset),
+            bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -MessagesViewController.Constants.horizontalInset),
+            bubbleView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -MessagesViewController.Constants.rowSpacing)
+        ])
+    }
+}
+
+private final class MessageBubbleView: UIView {
+    private let avatarImageView = UIImageView()
+    private let bubbleLabel = UILabel()
+    private let bubbleContainerView = UIView()
+
+    init(message: MessageBubble? = nil) {
+        super.init(frame: .zero)
+
+        configureView()
+        configureLayout()
+
+        if let message {
+            configure(message: message)
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    func configure(message: MessageBubble) {
+        bubbleLabel.text = message.text
+        bubbleContainerView.backgroundColor = message.isOutgoing
+            ? UIColor(red: 0.87, green: 0.92, blue: 0.09, alpha: 1.0)
+            : UIColor(red: 0.70, green: 0.60, blue: 0.96, alpha: 1.0)
+        bubbleLabel.textColor = message.isOutgoing
+            ? UIColor(red: 0.28, green: 0.20, blue: 0.16, alpha: 1.0)
+            : .white
+        outgoingConstraints.forEach { $0.isActive = message.isOutgoing }
+        incomingConstraints.forEach { $0.isActive = !message.isOutgoing }
+    }
+
+    private var incomingConstraints: [NSLayoutConstraint] = []
+    private var outgoingConstraints: [NSLayoutConstraint] = []
+
+    private func configureView() {
         translatesAutoresizingMaskIntoConstraints = false
 
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -146,23 +206,18 @@ private final class MessageBubbleView: UIView {
         avatarImageView.clipsToBounds = true
 
         bubbleContainerView.translatesAutoresizingMaskIntoConstraints = false
-        bubbleContainerView.backgroundColor = message.isOutgoing
-            ? UIColor(red: 0.87, green: 0.92, blue: 0.09, alpha: 1.0)
-            : UIColor(red: 0.70, green: 0.60, blue: 0.96, alpha: 1.0)
         bubbleContainerView.layer.cornerRadius = 16
 
         bubbleLabel.translatesAutoresizingMaskIntoConstraints = false
-        bubbleLabel.text = message.text
         bubbleLabel.font = AppFont.medium(size: 12)
-        bubbleLabel.textColor = message.isOutgoing
-            ? UIColor(red: 0.28, green: 0.20, blue: 0.16, alpha: 1.0)
-            : .white
         bubbleLabel.numberOfLines = 0
 
         addSubview(avatarImageView)
         addSubview(bubbleContainerView)
         bubbleContainerView.addSubview(bubbleLabel)
+    }
 
+    private func configureLayout() {
         NSLayoutConstraint.activate([
             heightAnchor.constraint(greaterThanOrEqualToConstant: 97),
 
@@ -180,16 +235,13 @@ private final class MessageBubbleView: UIView {
             bubbleLabel.bottomAnchor.constraint(equalTo: bubbleContainerView.bottomAnchor, constant: -12)
         ])
 
-        if message.isOutgoing {
-            NSLayoutConstraint.activate([
-                avatarImageView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                bubbleContainerView.trailingAnchor.constraint(equalTo: avatarImageView.trailingAnchor)
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                avatarImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                bubbleContainerView.leadingAnchor.constraint(equalTo: avatarImageView.leadingAnchor)
-            ])
-        }
+        incomingConstraints = [
+            avatarImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            bubbleContainerView.leadingAnchor.constraint(equalTo: avatarImageView.leadingAnchor)
+        ]
+        outgoingConstraints = [
+            avatarImageView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            bubbleContainerView.trailingAnchor.constraint(equalTo: avatarImageView.trailingAnchor)
+        ]
     }
 }

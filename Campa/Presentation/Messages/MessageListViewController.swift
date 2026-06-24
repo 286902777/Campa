@@ -1,6 +1,6 @@
 import UIKit
 
-final class MessageListViewController: UIViewController {
+final class MessageListViewController: BaseViewController {
     fileprivate enum Constants {
         static let horizontalInset: CGFloat = 20
         static let estimatedRowHeight: CGFloat = 75
@@ -9,8 +9,6 @@ final class MessageListViewController: UIViewController {
     }
 
     private let viewModel: MessageListViewModel
-    private let titleLabel = UILabel()
-    private let sparkleButton = UIButton(type: .custom)
     private let tableView = UITableView(frame: .zero, style: .plain)
 
     init(viewModel: MessageListViewModel = MessageListViewModel()) {
@@ -27,27 +25,13 @@ final class MessageListViewController: UIViewController {
         super.viewDidLoad()
 
         configureView()
-        configureHeader()
         configureMessages()
         configureLayout()
     }
 
     private func configureView() {
-        view.backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
-    }
-
-    private func configureHeader() {
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = viewModel.title
-        titleLabel.font = AppFont.bold(size: 27)
-        titleLabel.textColor = UIColor(red: 0.25, green: 0.02, blue: 0.02, alpha: 1.0)
-        titleLabel.accessibilityIdentifier = "messageListTitleLabel"
-
-        sparkleButton.translatesAutoresizingMaskIntoConstraints = false
-        sparkleButton.setImage(UIImage(named: "star"), for: .normal)
-
-        view.addSubview(titleLabel)
-        view.addSubview(sparkleButton)
+        self.changeNavbar(.titleRightBtn)
+        self.setTitleAndRight(title: "Message", right: "star", rightSize: CGSize(width: 89, height: 41))
     }
 
     private func configureMessages() {
@@ -68,15 +52,7 @@ final class MessageListViewController: UIViewController {
 
     private func configureLayout() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-
-            sparkleButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor, constant: 1),
-            sparkleButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            sparkleButton.widthAnchor.constraint(equalToConstant: 89),
-            sparkleButton.heightAnchor.constraint(equalToConstant: 41),
-
-            tableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 27),
+            tableView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 27),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
@@ -99,6 +75,12 @@ extension MessageListViewController: UITableViewDataSource, UITableViewDelegate 
 
         cell.configure(item: viewModel.messages[indexPath.row])
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+         let _ = viewModel.messages[indexPath.row]
+         let vc = MessagesViewController()
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 

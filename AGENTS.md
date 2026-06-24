@@ -30,6 +30,7 @@
 ## 依赖库
 - 网络请求：`Alamofire`
 - 自适应布局：`SnapKit`
+- 键盘自适应：`IQKeyboardManager`
 - 响应式编程：`Combine` (系统原生，优先)
 - 持久化：`CoreData`
 
