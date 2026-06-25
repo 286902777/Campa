@@ -45,7 +45,10 @@
 		1746C5A92FEBF2BF00305DF9 /* PayAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */; };
 		1746C5AB2FECC89200305DF9 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AA2FECC89200305DF9 /* WebViewController.swift */; };
 		1746C5AD2FECCDD400305DF9 /* EmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AC2FECCDD400305DF9 /* EmptyView.swift */; };
+		1746C5AF2FED11AB00305DF9 /* ReportAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */; };
 		1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FEDE00100305DF9 /* PostViewController.swift */; };
+		1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B22FEE318500305DF9 /* CampusViewController.swift */; };
+		1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,8 +108,11 @@
 		1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayAlertController.swift; sourceTree = "<group>"; };
 		1746C5AA2FECC89200305DF9 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		1746C5AC2FECCDD400305DF9 /* EmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyView.swift; sourceTree = "<group>"; };
+		1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportAlertController.swift; sourceTree = "<group>"; };
 		1746C5AE2FEDE00100305DF9 /* PostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewController.swift; sourceTree = "<group>"; };
 		1746C5B12FEE015A00305DF9 /* Campa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Campa.entitlements; sourceTree = "<group>"; };
+		1746C5B22FEE318500305DF9 /* CampusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampusViewController.swift; sourceTree = "<group>"; };
+		1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -178,7 +184,9 @@
 				0A0000010000000000000612 /* AuthEntry */,
 				0A0000010000000000000610 /* Splash */,
 				0A0000010000000000000605 /* Home */,
+				1746C5B42FEE318500305DF9 /* Campus */,
 				1746C5B02FEDE00100305DF9 /* Post */,
+				1746C5B72FEF1A6B00305DF9 /* Report */,
 				0A0000010000000000000614 /* Messages */,
 				0A0000010000000000000616 /* Settings */,
 			);
@@ -308,6 +316,7 @@
 			isa = PBXGroup;
 			children = (
 				1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */,
+				1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */,
 			);
 			path = Alert;
 			sourceTree = "<group>";
@@ -326,6 +335,22 @@
 				1746C5AE2FEDE00100305DF9 /* PostViewController.swift */,
 			);
 			path = Post;
+			sourceTree = "<group>";
+		};
+		1746C5B42FEE318500305DF9 /* Campus */ = {
+			isa = PBXGroup;
+			children = (
+				1746C5B22FEE318500305DF9 /* CampusViewController.swift */,
+			);
+			path = Campus;
+			sourceTree = "<group>";
+		};
+		1746C5B72FEF1A6B00305DF9 /* Report */ = {
+			isa = PBXGroup;
+			children = (
+				1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */,
+			);
+			path = Report;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -493,6 +518,7 @@
 				0A0000010000000000000020 /* SettingsViewController.swift in Sources */,
 				0A0000010000000000000021 /* SettingsViewModel.swift in Sources */,
 				0A0000010000000000000024 /* ProfileViewController.swift in Sources */,
+				1746C5AF2FED11AB00305DF9 /* ReportAlertController.swift in Sources */,
 				0A0000010000000000000025 /* ProfileViewModel.swift in Sources */,
 				0A0000010000000000000009 /* SplashViewController.swift in Sources */,
 				0A0000010000000000000010 /* SplashViewModel.swift in Sources */,
@@ -500,6 +526,8 @@
 				0A0000010000000000000003 /* HomeViewController.swift in Sources */,
 				0A0000010000000000000004 /* HomeViewModel.swift in Sources */,
 				1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */,
+				1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */,
+				1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

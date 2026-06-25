@@ -40,7 +40,7 @@ class BaseViewController: UIViewController {
          let label = UILabel()
         label.textAlignment = .left
         label.textColor = UIColor(red: 52/255.0, green: 4/255, blue: 4/255.0, alpha: 1.0)
-        label.font = UIFont.systemFont(ofSize: 20, weight: .bold)
+        label.font = AppFont.bold(size: 20)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()

@@ -40,7 +40,7 @@ final class MainTabBarController: UITabBarController {
     private func configureViewControllers() {
         viewControllers = [
             makeTab(makeNavigationController(rootViewController: HomeViewController()), title: NSLocalizedString("Home", comment: "Home tab title"), imageName: "home", selectedImageName: "home_sel"),
-            makeTab(TabPlaceholderViewController(title: NSLocalizedString("Campus", comment: "Campus tab title")), title: NSLocalizedString("Campus", comment: "Campus tab title"), imageName: "build", selectedImageName: "build_sel"),
+            makeTab(makeNavigationController(rootViewController: CampusViewController()), title: NSLocalizedString("Campus", comment: "Campus tab title"), imageName: "build", selectedImageName: "build_sel"),
             makeTab(makeNavigationController(rootViewController: MessageListViewController()), title: NSLocalizedString("Message", comment: "Messages tab title"), imageName: "bell", selectedImageName: "bell_sel"),
             makeTab(makeNavigationController(rootViewController: ProfileViewController()), title: NSLocalizedString("Me", comment: "Profile tab title"), imageName: "user_set", selectedImageName: "user_set_sel")
         ]

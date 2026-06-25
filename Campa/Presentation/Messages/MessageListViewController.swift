@@ -10,6 +10,7 @@ final class MessageListViewController: BaseViewController {
 
     private let viewModel: MessageListViewModel
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let starContainerView = UIImageView()
 
     init(viewModel: MessageListViewModel = MessageListViewModel()) {
         self.viewModel = viewModel
@@ -30,8 +31,19 @@ final class MessageListViewController: BaseViewController {
     }
 
     private func configureView() {
-        self.changeNavbar(.titleRightBtn)
-        self.setTitleAndRight(title: "Message", right: "star", rightSize: CGSize(width: 89, height: 41))
+        self.changeNavbar(.title)
+        self.setTitleAndRight(title: "Message", right: nil)
+        starContainerView.translatesAutoresizingMaskIntoConstraints = false
+        starContainerView.backgroundColor = .clear
+        starContainerView.layer.borderColor = UIColor(red: 0.45, green: 0.36, blue: 0.30, alpha: 0.45).cgColor
+        starContainerView.image = UIImage(named: "star")
+        starContainerView.contentMode = .scaleAspectFill
+        self.navBar.addSubview(starContainerView)
+        self.starContainerView.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.right.equalTo(-20)
+            make.size.equalTo(CGSize(width: 88, height: 30))
+        }
     }
 
     private func configureMessages() {

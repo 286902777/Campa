@@ -126,7 +126,13 @@ final class HomeViewController: BaseViewController {
 
     private func configurePages() {
         pageContainerView.translatesAutoresizingMaskIntoConstraints = false
-        pageControllers = viewModel.segmentPosts.map { HomePostsPageViewController(posts: $0) }
+        pageControllers = viewModel.segmentPosts.map { posts in
+            let viewController = HomePostsPageViewController(posts: posts)
+            viewController.onMoreTapped = { [weak self] in
+                self?.showReport()
+            }
+            return viewController
+        }
 
         addChild(pageViewController)
         pageViewController.dataSource = self
@@ -212,6 +218,12 @@ final class HomeViewController: BaseViewController {
             button.setAttributedTitle(NSAttributedString(string: title, attributes: attributes), for: .normal)
         }
     }
+
+    private func showReport() {
+        let viewController = ReportViewController()
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
 }
 
 extension HomeViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
@@ -254,6 +266,7 @@ extension HomeViewController: UIPageViewControllerDataSource, UIPageViewControll
 private final class HomePostsPageViewController: UIViewController {
     private let posts: [HomePost]
     private let tableView = UITableView(frame: .zero, style: .plain)
+    var onMoreTapped: (() -> Void)?
 
     init(posts: [HomePost]) {
         self.posts = posts
@@ -315,6 +328,9 @@ extension HomePostsPageViewController: UITableViewDataSource {
             return UITableViewCell()
         }
         cell.configure(post: posts[indexPath.row])
+        cell.onMoreTapped = { [weak self] in
+            self?.onMoreTapped?()
+        }
         return cell
     }
 }
@@ -326,11 +342,12 @@ private final class HomePostTableViewCell: UITableViewCell {
     private let avatarImageView = UIImageView()
     private let authorLabel = UILabel()
     private let metaLabel = UILabel()
-    private let moreImageView = UIImageView()
+    private let moreButton = UIButton(type: .custom)
     private let bodyLabel = UILabel()
     private let heroImageView = UIImageView()
     private let thumbnailsStackView = UIStackView()
     private let hotImageView = UIImageView()
+    var onMoreTapped: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -350,6 +367,7 @@ private final class HomePostTableViewCell: UITableViewCell {
             thumbnailsStackView.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
+        onMoreTapped = nil
     }
 
     func configure(post: HomePost) {
@@ -389,10 +407,10 @@ private final class HomePostTableViewCell: UITableViewCell {
         metaLabel.translatesAutoresizingMaskIntoConstraints = false
         metaLabel.font = AppFont.medium(size: 10)
 
-        moreImageView.translatesAutoresizingMaskIntoConstraints = false
-        moreImageView.image = UIImage(named: "more") ?? UIImage(systemName: "ellipsis")
-        moreImageView.tintColor = .white
-        moreImageView.contentMode = .scaleAspectFit
+        moreButton.translatesAutoresizingMaskIntoConstraints = false
+        moreButton.setImage(UIImage(named: "more_gray") ?? UIImage(systemName: "ellipsis"), for: .normal)
+        moreButton.imageView?.contentMode = .scaleAspectFit
+        moreButton.addTarget(self, action: #selector(moreButtonTapped), for: .touchUpInside)
 
         bodyLabel.translatesAutoresizingMaskIntoConstraints = false
         bodyLabel.font = AppFont.medium(size: 12)
@@ -416,7 +434,7 @@ private final class HomePostTableViewCell: UITableViewCell {
         cardView.addSubview(avatarImageView)
         cardView.addSubview(authorLabel)
         cardView.addSubview(metaLabel)
-        cardView.addSubview(moreImageView)
+        cardView.addSubview(moreButton)
         cardView.addSubview(bodyLabel)
         cardView.addSubview(heroImageView)
         cardView.addSubview(thumbnailsStackView)
@@ -437,16 +455,16 @@ private final class HomePostTableViewCell: UITableViewCell {
 
             authorLabel.topAnchor.constraint(equalTo: avatarImageView.topAnchor, constant: 2),
             authorLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 10),
-            authorLabel.trailingAnchor.constraint(lessThanOrEqualTo: moreImageView.leadingAnchor, constant: -12),
+            authorLabel.trailingAnchor.constraint(lessThanOrEqualTo: moreButton.leadingAnchor, constant: -12),
 
             metaLabel.topAnchor.constraint(equalTo: authorLabel.bottomAnchor, constant: 3),
             metaLabel.leadingAnchor.constraint(equalTo: authorLabel.leadingAnchor),
-            metaLabel.trailingAnchor.constraint(lessThanOrEqualTo: moreImageView.leadingAnchor, constant: -12),
+            metaLabel.trailingAnchor.constraint(lessThanOrEqualTo: moreButton.leadingAnchor, constant: -12),
 
-            moreImageView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
-            moreImageView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -13),
-            moreImageView.widthAnchor.constraint(equalToConstant: 18),
-            moreImageView.heightAnchor.constraint(equalToConstant: 18),
+            moreButton.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 10),
+            moreButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -8),
+            moreButton.widthAnchor.constraint(equalToConstant: 32),
+            moreButton.heightAnchor.constraint(equalToConstant: 32),
 
             bodyLabel.topAnchor.constraint(equalTo: avatarImageView.bottomAnchor, constant: 12),
             bodyLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 12),
@@ -476,5 +494,9 @@ private final class HomePostTableViewCell: UITableViewCell {
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         return imageView
+    }
+
+    @objc private func moreButtonTapped() {
+        onMoreTapped?()
     }
 }

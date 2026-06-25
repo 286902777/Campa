@@ -1,9 +1,14 @@
+import IQKeyboardManagerSwift
 import UIKit
 
 final class MessagesViewController: BaseViewController {
     fileprivate enum Constants {
         static let horizontalInset: CGFloat = 22
         static let inputHeight: CGFloat = 48
+        static let inputVerticalInset: CGFloat = 8
+        static let maxInputLines: CGFloat = 4
+        static let inputBottomInset: CGFloat = 34
+        static let keyboardInputSpacing: CGFloat = 12
         static let estimatedRowHeight: CGFloat = 115
         static let rowSpacing: CGFloat = 18
     }
@@ -11,8 +16,11 @@ final class MessagesViewController: BaseViewController {
     private let viewModel: MessagesViewModel
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let inputContainerView = UIView()
-    private let inputLabel = UILabel()
+    private let inputTextView = UITextView()
+    private let inputPlaceholderLabel = UILabel()
     private let sendButton = UIButton(type: .custom)
+    private var inputContainerHeightConstraint: NSLayoutConstraint?
+    private var inputContainerBottomConstraint: NSLayoutConstraint?
 
     init(viewModel: MessagesViewModel = MessagesViewModel()) {
         self.viewModel = viewModel
@@ -31,6 +39,16 @@ final class MessagesViewController: BaseViewController {
         configureMessages()
         configureInputBar()
         configureLayout()
+        configureKeyboardHandling()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateInputTextViewHeight()
     }
 
     private func configureView() {
@@ -39,7 +57,11 @@ final class MessagesViewController: BaseViewController {
     }
 
     override func rightAction() {
-        print("rightAction")
+        let vc = ReportViewController()
+        vc.clickBlock = {
+            
+        }
+        self.navigationController?.pushViewController(vc, animated: true)
     }
     
     private func configureMessages() {
@@ -57,30 +79,45 @@ final class MessagesViewController: BaseViewController {
 
     private func configureInputBar() {
         inputContainerView.translatesAutoresizingMaskIntoConstraints = false
-        inputContainerView.backgroundColor = .white
-        inputContainerView.layer.cornerRadius = Constants.inputHeight / 2
-        inputContainerView.layer.shadowColor = UIColor.black.cgColor
-        inputContainerView.layer.shadowOpacity = 0.06
-        inputContainerView.layer.shadowOffset = CGSize(width: 0, height: 4)
-        inputContainerView.layer.shadowRadius = 12
+        inputContainerView.backgroundColor = UIColor(red: 52/255.0, green: 4/255, blue: 4/255.0, alpha: 1.0)
+        inputContainerView.layer.cornerRadius = 8
 
-        inputLabel.translatesAutoresizingMaskIntoConstraints = false
-        inputLabel.text = viewModel.inputPlaceholder
-        inputLabel.font = AppFont.medium(size: 12)
-        inputLabel.textColor = UIColor(red: 0.62, green: 0.56, blue: 0.52, alpha: 1.0)
+        inputTextView.translatesAutoresizingMaskIntoConstraints = false
+        inputTextView.backgroundColor = .clear
+        inputTextView.font = AppFont.medium(size: 14)
+        inputTextView.textColor = .white
+        inputTextView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+        inputTextView.textContainer.lineFragmentPadding = 0
+        inputTextView.showsVerticalScrollIndicator = false
+        inputTextView.isScrollEnabled = false
+        inputTextView.delegate = self
+        inputTextView.iq.enableMode = .disabled
+
+        inputPlaceholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        inputPlaceholderLabel.text = "Say something...."
+        inputPlaceholderLabel.font = AppFont.medium(size: 12)
+        inputPlaceholderLabel.textColor = UIColor(red: 0.62, green: 0.56, blue: 0.52, alpha: 1.0)
 
         sendButton.translatesAutoresizingMaskIntoConstraints = false
-        sendButton.backgroundColor = UIColor(red: 0.29, green: 0.02, blue: 0.01, alpha: 1.0)
-        sendButton.layer.cornerRadius = 18
-        sendButton.setImage(UIImage(named: "add_pupor"), for: .normal)
+        sendButton.setImage(UIImage(named: "send"), for: .normal)
         sendButton.accessibilityIdentifier = "messagesSendButton"
 
-        inputContainerView.addSubview(inputLabel)
+        inputContainerView.addSubview(inputTextView)
+        inputTextView.addSubview(inputPlaceholderLabel)
         inputContainerView.addSubview(sendButton)
         view.addSubview(inputContainerView)
+        updatePlaceholderVisibility()
     }
 
     private func configureLayout() {
+        inputContainerHeightConstraint = inputContainerView.heightAnchor.constraint(equalToConstant: Constants.inputHeight)
+        inputContainerHeightConstraint?.isActive = true
+        inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+            constant: -Constants.inputBottomInset
+        )
+        inputContainerBottomConstraint?.isActive = true
+
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 24),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -89,19 +126,94 @@ final class MessagesViewController: BaseViewController {
 
             inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            inputContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -86),
-            inputContainerView.heightAnchor.constraint(equalToConstant: Constants.inputHeight),
 
-            inputLabel.leadingAnchor.constraint(equalTo: inputContainerView.leadingAnchor, constant: 18),
-            inputLabel.centerYAnchor.constraint(equalTo: inputContainerView.centerYAnchor),
+            inputTextView.topAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: Constants.inputVerticalInset),
+            inputTextView.leadingAnchor.constraint(equalTo: inputContainerView.leadingAnchor, constant: 18),
+            inputTextView.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -12),
+            inputTextView.bottomAnchor.constraint(equalTo: inputContainerView.bottomAnchor, constant: -Constants.inputVerticalInset),
 
-            sendButton.trailingAnchor.constraint(equalTo: inputContainerView.trailingAnchor, constant: -8),
+            inputPlaceholderLabel.topAnchor.constraint(equalTo: inputTextView.topAnchor, constant: 8),
+            inputPlaceholderLabel.leadingAnchor.constraint(equalTo: inputTextView.leadingAnchor),
+            inputPlaceholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: inputTextView.trailingAnchor),
+
+            sendButton.trailingAnchor.constraint(equalTo: inputContainerView.trailingAnchor, constant: -16),
             sendButton.centerYAnchor.constraint(equalTo: inputContainerView.centerYAnchor),
             sendButton.widthAnchor.constraint(equalToConstant: 36),
-            sendButton.heightAnchor.constraint(equalToConstant: 36),
-
-            inputLabel.trailingAnchor.constraint(lessThanOrEqualTo: sendButton.leadingAnchor, constant: -12)
+            sendButton.heightAnchor.constraint(equalToConstant: 36)
         ])
+    }
+
+    private func configureKeyboardHandling() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleKeyboardFrameChanged(_:)),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleKeyboardFrameChanged(_:)),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    private func updatePlaceholderVisibility() {
+        inputPlaceholderLabel.isHidden = !inputTextView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func updateInputTextViewHeight() {
+        let textWidth = inputTextView.bounds.width
+        guard textWidth > 0 else {
+            return
+        }
+
+        let fittingHeight = inputTextView.sizeThatFits(
+            CGSize(width: textWidth, height: CGFloat.greatestFiniteMagnitude)
+        ).height
+        let lineHeight = inputTextView.font?.lineHeight ?? AppFont.medium(size: 12).lineHeight
+        let maxTextHeight = lineHeight * Constants.maxInputLines
+            + inputTextView.textContainerInset.top
+            + inputTextView.textContainerInset.bottom
+        let textHeight = min(fittingHeight, maxTextHeight)
+        let containerHeight = max(Constants.inputHeight, textHeight + Constants.inputVerticalInset * 2)
+
+        inputTextView.isScrollEnabled = fittingHeight > maxTextHeight
+        guard abs((inputContainerHeightConstraint?.constant ?? 0) - containerHeight) > 0.5 else {
+            return
+        }
+
+        inputContainerHeightConstraint?.constant = containerHeight
+    }
+
+    @objc private func handleKeyboardFrameChanged(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+            return
+        }
+
+        let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
+        let keyboardOverlap = max(0, view.bounds.maxY - keyboardFrameInView.minY - view.safeAreaInsets.bottom)
+        let bottomInset = keyboardOverlap > 0
+            ? keyboardOverlap + Constants.keyboardInputSpacing
+            : Constants.inputBottomInset
+        inputContainerBottomConstraint?.constant = -bottomInset
+
+        let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0.25
+        let curveRawValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? 0
+        let options = UIView.AnimationOptions(rawValue: curveRawValue << 16)
+
+        UIView.animate(withDuration: duration, delay: 0, options: options) {
+            self.view.layoutIfNeeded()
+            self.tableView.scrollToRow(at: IndexPath(row: self.viewModel.messages.count > 0 ? (self.viewModel.messages.count - 1) : 0, section: 0), at: .none, animated: false)
+        }
+    }
+}
+
+extension MessagesViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        updatePlaceholderVisibility()
+        updateInputTextViewHeight()
     }
 }
 
