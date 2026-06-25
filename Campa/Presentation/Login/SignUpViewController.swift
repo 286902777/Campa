@@ -71,6 +71,7 @@ final class SignUpViewController: BaseViewController {
         signUpButton.backgroundColor = UIColor(red: 0.28, green: 0.02, blue: 0.01, alpha: 1.0)
         signUpButton.layer.cornerRadius = Constants.buttonHeight / 2
         signUpButton.accessibilityIdentifier = "signUpButton"
+        signUpButton.addTarget(self, action: #selector(handleSignUpTapped), for: .touchUpInside)
     }
 
     private func configureLayout() {
@@ -108,5 +109,9 @@ final class SignUpViewController: BaseViewController {
 
     @objc private func handleBackButtonTapped() {
         navigationController?.popViewController(animated: true)
+    }
+
+    @objc private func handleSignUpTapped() {
+        navigationController?.pushViewController(PersonalInfoViewController(), animated: true)
     }
 }
