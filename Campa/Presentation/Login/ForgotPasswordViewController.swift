@@ -26,7 +26,7 @@ final class ForgotPasswordViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        self.navType = .back
         configureTitleLabel()
         configureFields()
         configureSubmitButton()

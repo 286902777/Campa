@@ -9,6 +9,7 @@ import UIKit
 
 enum NavBarType: String {
     case back = "back"
+    case right = "right"
     case title = "title"
     case backTiltle = "backTiltle"
     case backRightBtn = "backRightBtn"
@@ -59,6 +60,7 @@ class BaseViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
         view.addSubview(navBar)
+        navBar.backgroundColor = .clear
         view.bringSubviewToFront(navBar)
         navBar.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -79,6 +81,8 @@ class BaseViewController: UIViewController {
                 backBtn.widthAnchor.constraint(equalToConstant: 36),
                 backBtn.heightAnchor.constraint(equalToConstant: 36)
             ])
+        case .right:
+            navBar.addSubview(rightBtn)
         case .title:
             navBar.addSubview(titleL)
             NSLayoutConstraint.activate([
@@ -157,11 +161,15 @@ class BaseViewController: UIViewController {
     @objc func clickAction(_ sender: UIButton) {
         let idx = sender.tag
         if idx == 0 {
-            self.navigationController?.popViewController(animated: true)
+            self.backAction()
         } else {
             self.rightAction()
         }
         print(sender.tag)
+    }
+    
+    func backAction() {
+        self.navigationController?.popViewController(animated: true)
     }
     
     func rightAction() {

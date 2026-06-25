@@ -15,8 +15,8 @@ final class MainTabBarController: UITabBarController {
     private let tabItems: [CustomTabItem] = [
         CustomTabItem(imageName: "home", selectedImageName: "home_sel", index: 0),
         CustomTabItem(imageName: "build", selectedImageName: "build_sel", index: 1),
-        CustomTabItem(imageName: "bell", selectedImageName: "bell_sel", index: 3),
-        CustomTabItem(imageName: "user_set", selectedImageName: "user_set_sel", index: 4)
+        CustomTabItem(imageName: "bell", selectedImageName: "bell_sel", index: 2),
+        CustomTabItem(imageName: "user_set", selectedImageName: "user_set_sel", index: 3)
     ]
 
     override func viewDidLoad() {
@@ -41,7 +41,6 @@ final class MainTabBarController: UITabBarController {
         viewControllers = [
             makeTab(makeNavigationController(rootViewController: HomeViewController()), title: NSLocalizedString("Home", comment: "Home tab title"), imageName: "home", selectedImageName: "home_sel"),
             makeTab(TabPlaceholderViewController(title: NSLocalizedString("Campus", comment: "Campus tab title")), title: NSLocalizedString("Campus", comment: "Campus tab title"), imageName: "build", selectedImageName: "build_sel"),
-            makeTab(TabPlaceholderViewController(title: NSLocalizedString("Post", comment: "Post tab title")), title: NSLocalizedString("Post", comment: "Post tab title"), imageName: "tab_add", selectedImageName: "tab_add"),
             makeTab(makeNavigationController(rootViewController: MessageListViewController()), title: NSLocalizedString("Message", comment: "Messages tab title"), imageName: "bell", selectedImageName: "bell_sel"),
             makeTab(makeNavigationController(rootViewController: ProfileViewController()), title: NSLocalizedString("Me", comment: "Profile tab title"), imageName: "user_set", selectedImageName: "user_set_sel")
         ]
@@ -85,8 +84,8 @@ final class MainTabBarController: UITabBarController {
         centerButton.layer.shadowOffset = CGSize(width: 0, height: 4)
         centerButton.layer.shadowRadius = 10
         centerButton.accessibilityIdentifier = "mainTabCenterButton"
-        centerButton.addTarget(self, action: #selector(handleCenterButtonTapped), for: .touchUpInside)
-
+        centerButton.addTarget(self, action: #selector(clickCenterAction), for: .touchUpInside)
+        
         view.addSubview(customTabBarView)
         customTabBarView.addSubview(tabBackgroundImageView)
         tabItems.map(makeItemButton(item:)).forEach { button in
@@ -115,6 +114,12 @@ final class MainTabBarController: UITabBarController {
         configureItemButtonLayout()
     }
 
+    @objc func clickCenterAction() {
+        let vc = PostViewController()
+        vc.modalPresentationStyle = .overFullScreen
+        self.present(vc, animated: false)
+    }
+    
     private func configureItemButtonLayout() {
         guard itemButtons.count == 4 else {
             return
@@ -159,7 +164,6 @@ final class MainTabBarController: UITabBarController {
         itemButtons.forEach { button in
             button.isSelected = button.tag == index
         }
-        centerButton.isSelected = index == 2
         updateCustomTabBarVisibility(animated: false)
     }
 
@@ -205,13 +209,6 @@ final class MainTabBarController: UITabBarController {
 
     @objc private func handleItemButtonTapped(_ sender: UIButton) {
         updateSelectedTab(index: sender.tag)
-    }
-
-    @objc private func handleCenterButtonTapped() {
-        let vc = PayAlertController()
-        vc.modalPresentationStyle = .overFullScreen
-        self.present(vc, animated: false)
-        updateSelectedTab(index: 2)
     }
 }
 

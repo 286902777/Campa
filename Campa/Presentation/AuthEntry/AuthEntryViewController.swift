@@ -1,3 +1,4 @@
+import AuthenticationServices
 import UIKit
 
 final class AuthEntryViewController: UIViewController {
@@ -21,7 +22,12 @@ final class AuthEntryViewController: UIViewController {
     private let agreementStackView = UIStackView()
     private let agreementButton = UIButton(type: .custom)
     private let agreementLabel = UILabel()
+    private let userAgreementText = NSLocalizedString("User Agreement", comment: "User agreement link")
+    private let privacyPolicyText = NSLocalizedString("Privacy Policy", comment: "Privacy policy link")
+    private let signUpText = NSLocalizedString("Sign up", comment: "Sign up link")
     private var isAgreementSelected = false
+
+    var onAppleLoginSucceeded: ((String) -> Void)?
 
     init(viewModel: AuthEntryViewModel = AuthEntryViewModel()) {
         self.viewModel = viewModel
@@ -90,10 +96,10 @@ final class AuthEntryViewController: UIViewController {
         newUserButton.addTarget(self, action: #selector(handleNewUserTapped), for: .touchUpInside)
 
         signUpButton.translatesAutoresizingMaskIntoConstraints = false
-        signUpButton.setTitle(viewModel.signUpPrompt, for: .normal)
-        signUpButton.setTitleColor(UIColor(red: 0.27, green: 0.18, blue: 0.14, alpha: 1.0), for: .normal)
+        signUpButton.setAttributedTitle(makeSignUpAttributedText(), for: .normal)
         signUpButton.titleLabel?.font = AppFont.regular(size: 11)
         signUpButton.accessibilityIdentifier = "signUpPromptButton"
+        signUpButton.addTarget(self, action: #selector(handleSignUpPromptTapped), for: .touchUpInside)
 
         appleButton.translatesAutoresizingMaskIntoConstraints = false
         appleButton.backgroundColor = UIColor(red: 0.13, green: 0.15, blue: 0.16, alpha: 1.0)
@@ -101,6 +107,7 @@ final class AuthEntryViewController: UIViewController {
         appleButton.setImage(UIImage(named: "apple"), for: .normal)
         appleButton.tintColor = .white
         appleButton.accessibilityIdentifier = "appleLoginButton"
+        appleButton.addTarget(self, action: #selector(handleAppleButtonTapped), for: .touchUpInside)
     }
 
     private func configureFilledButton(
@@ -153,12 +160,14 @@ final class AuthEntryViewController: UIViewController {
         agreementButton.addTarget(self, action: #selector(handleAgreementButtonTapped), for: .touchUpInside)
 
         agreementLabel.translatesAutoresizingMaskIntoConstraints = false
-        agreementLabel.text = viewModel.agreementTitle
+        agreementLabel.attributedText = makeAgreementAttributedText()
         agreementLabel.font = AppFont.regular(size: 10)
         agreementLabel.textColor = UIColor(red: 0.24, green: 0.20, blue: 0.18, alpha: 1.0)
         agreementLabel.numberOfLines = 1
         agreementLabel.adjustsFontSizeToFitWidth = true
         agreementLabel.minimumScaleFactor = 0.75
+        agreementLabel.isUserInteractionEnabled = true
+        agreementLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAgreementLabelTapped(_:))))
 
         agreementStackView.addArrangedSubview(agreementButton)
         agreementStackView.addArrangedSubview(agreementLabel)
@@ -230,12 +239,57 @@ final class AuthEntryViewController: UIViewController {
         agreementButton.isSelected = isAgreementSelected
     }
 
+    @objc private func handleAgreementLabelTapped(_ gesture: UITapGestureRecognizer) {
+        if agreementLabel.didTapAttributedText(userAgreementText, gesture: gesture) {
+            handleUserAgreementTapped()
+        } else if agreementLabel.didTapAttributedText(privacyPolicyText, gesture: gesture) {
+            handlePrivacyPolicyTapped()
+        }
+    }
+
+    private func handleUserAgreementTapped() {
+        let viewController = WebViewController()
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    private func handlePrivacyPolicyTapped() {
+        let viewController = WebViewController()
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
     @objc private func handleNewUserTapped() {
         guard guardAgreementSelected() else {
             return
         }
 
         navigationController?.pushViewController(SignUpViewController(), animated: true)
+    }
+
+    @objc private func handleSignUpPromptTapped() {
+        navigationController?.pushViewController(SignUpViewController(), animated: true)
+    }
+
+    @objc private func handleAppleButtonTapped() {
+        guard guardAgreementSelected() else {
+            return
+        }
+
+        let provider = ASAuthorizationAppleIDProvider()
+        let request = provider.createRequest()
+        request.requestedScopes = [.fullName, .email]
+
+        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+        authorizationController.delegate = self
+        authorizationController.presentationContextProvider = self
+        authorizationController.performRequests()
+    }
+
+    private func handleAppleLoginSucceeded(userID: String) {
+        print("Apple user id: \(userID)")
+        onAppleLoginSucceeded?(userID)
+        showToast(message: "Apple user id: \(userID)")
     }
 
     private func guardAgreementSelected() -> Bool {
@@ -245,6 +299,59 @@ final class AuthEntryViewController: UIViewController {
         }
 
         return true
+    }
+
+    private func makeAgreementAttributedText() -> NSAttributedString {
+        let fullText = viewModel.agreementTitle
+        let attributedString = NSMutableAttributedString(
+            string: fullText,
+            attributes: [
+                .font: AppFont.regular(size: 10),
+                .foregroundColor: UIColor(red: 0.24, green: 0.20, blue: 0.18, alpha: 1.0)
+            ]
+        )
+
+        [userAgreementText, privacyPolicyText].forEach { linkText in
+            let range = (fullText as NSString).range(of: linkText)
+            guard range.location != NSNotFound else {
+                return
+            }
+
+            attributedString.addAttributes(
+                [
+                    .underlineStyle: NSUnderlineStyle.single.rawValue,
+                    .foregroundColor: UIColor(red: 0.24, green: 0.20, blue: 0.18, alpha: 1.0)
+                ],
+                range: range
+            )
+        }
+
+        return attributedString
+    }
+
+    private func makeSignUpAttributedText() -> NSAttributedString {
+        let fullText = viewModel.signUpPrompt
+        let textColor = UIColor(red: 0.27, green: 0.18, blue: 0.14, alpha: 1.0)
+        let attributedString = NSMutableAttributedString(
+            string: fullText,
+            attributes: [
+                .font: AppFont.regular(size: 11),
+                .foregroundColor: textColor
+            ]
+        )
+        let range = (fullText as NSString).range(of: signUpText)
+        guard range.location != NSNotFound else {
+            return attributedString
+        }
+
+        attributedString.addAttributes(
+            [
+                .underlineStyle: NSUnderlineStyle.single.rawValue,
+                .foregroundColor: textColor
+            ],
+            range: range
+        )
+        return attributedString
     }
 
     private func showToast(message: String) {
@@ -278,5 +385,71 @@ final class AuthEntryViewController: UIViewController {
                 toastLabel.removeFromSuperview()
             })
         })
+    }
+}
+
+extension AuthEntryViewController: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+            return
+        }
+
+        handleAppleLoginSucceeded(userID: credential.user)
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        let authorizationError = error as? ASAuthorizationError
+        guard authorizationError?.code != .canceled else {
+            return
+        }
+
+        showToast(message: NSLocalizedString("Apple login failed", comment: "Apple login failure toast"))
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        view.window ?? ASPresentationAnchor()
+    }
+}
+
+private extension UILabel {
+    func didTapAttributedText(_ targetText: String, gesture: UITapGestureRecognizer) -> Bool {
+        guard let attributedText = attributedText, !targetText.isEmpty else {
+            return false
+        }
+
+        let fullText = attributedText.string as NSString
+        let targetRange = fullText.range(of: targetText)
+        guard targetRange.location != NSNotFound else {
+            return false
+        }
+
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(size: bounds.size)
+        let textStorage = NSTextStorage(attributedString: attributedText)
+
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+
+        textContainer.lineFragmentPadding = 0
+        textContainer.maximumNumberOfLines = numberOfLines
+        textContainer.lineBreakMode = lineBreakMode
+
+        let location = gesture.location(in: self)
+        let textBoundingBox = layoutManager.usedRect(for: textContainer)
+        let textOffset = CGPoint(
+            x: (bounds.width - textBoundingBox.width) * 0.5 - textBoundingBox.minX,
+            y: (bounds.height - textBoundingBox.height) * 0.5 - textBoundingBox.minY
+        )
+        let textLocation = CGPoint(x: location.x - textOffset.x, y: location.y - textOffset.y)
+        let characterIndex = layoutManager.characterIndex(
+            for: textLocation,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+
+        return NSLocationInRange(characterIndex, targetRange)
     }
 }

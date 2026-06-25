@@ -43,6 +43,9 @@
 		0A0000010000000000000032 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001303 /* IQKeyboardManagerSwift */; };
 		1746C5A32FEBE74900305DF9 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5A22FEBE74900305DF9 /* BaseViewController.swift */; };
 		1746C5A92FEBF2BF00305DF9 /* PayAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */; };
+		1746C5AB2FECC89200305DF9 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AA2FECC89200305DF9 /* WebViewController.swift */; };
+		1746C5AD2FECCDD400305DF9 /* EmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AC2FECCDD400305DF9 /* EmptyView.swift */; };
+		1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FEDE00100305DF9 /* PostViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +103,10 @@
 		0A000001000000000000012F /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		1746C5A22FEBE74900305DF9 /* BaseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewController.swift; sourceTree = "<group>"; };
 		1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayAlertController.swift; sourceTree = "<group>"; };
+		1746C5AA2FECC89200305DF9 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
+		1746C5AC2FECCDD400305DF9 /* EmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyView.swift; sourceTree = "<group>"; };
+		1746C5AE2FEDE00100305DF9 /* PostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewController.swift; sourceTree = "<group>"; };
+		1746C5B12FEE015A00305DF9 /* Campa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Campa.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +153,7 @@
 				0A0000010000000000000603 /* App */,
 				0A0000010000000000000604 /* Presentation */,
 				0A0000010000000000000606 /* Resources */,
+				1746C5B12FEE015A00305DF9 /* Campa.entitlements */,
 			);
 			path = Campa;
 			sourceTree = "<group>";
@@ -170,6 +178,7 @@
 				0A0000010000000000000612 /* AuthEntry */,
 				0A0000010000000000000610 /* Splash */,
 				0A0000010000000000000605 /* Home */,
+				1746C5B02FEDE00100305DF9 /* Post */,
 				0A0000010000000000000614 /* Messages */,
 				0A0000010000000000000616 /* Settings */,
 			);
@@ -181,6 +190,7 @@
 			children = (
 				0A0000010000000000000103 /* HomeViewController.swift */,
 				0A0000010000000000000104 /* HomeViewModel.swift */,
+				1746C5AC2FECCDD400305DF9 /* EmptyView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -289,6 +299,7 @@
 				0A000001000000000000012B /* SettingsViewModel.swift */,
 				0A000001000000000000012E /* ProfileViewController.swift */,
 				0A000001000000000000012F /* ProfileViewModel.swift */,
+				1746C5AA2FECC89200305DF9 /* WebViewController.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -307,6 +318,14 @@
 				1746C5A22FEBE74900305DF9 /* BaseViewController.swift */,
 			);
 			path = Base;
+			sourceTree = "<group>";
+		};
+		1746C5B02FEDE00100305DF9 /* Post */ = {
+			isa = PBXGroup;
+			children = (
+				1746C5AE2FEDE00100305DF9 /* PostViewController.swift */,
+			);
+			path = Post;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -462,6 +481,7 @@
 				0A0000010000000000000012 /* LoginViewModel.swift in Sources */,
 				0A0000010000000000000016 /* SignUpViewController.swift in Sources */,
 				0A0000010000000000000017 /* SignUpViewModel.swift in Sources */,
+				1746C5AB2FECC89200305DF9 /* WebViewController.swift in Sources */,
 				0A0000010000000000000022 /* PersonalInfoViewController.swift in Sources */,
 				0A0000010000000000000023 /* PersonalInfoViewModel.swift in Sources */,
 				0A0000010000000000000018 /* ForgotPasswordViewController.swift in Sources */,
@@ -476,8 +496,10 @@
 				0A0000010000000000000025 /* ProfileViewModel.swift in Sources */,
 				0A0000010000000000000009 /* SplashViewController.swift in Sources */,
 				0A0000010000000000000010 /* SplashViewModel.swift in Sources */,
+				1746C5AD2FECCDD400305DF9 /* EmptyView.swift in Sources */,
 				0A0000010000000000000003 /* HomeViewController.swift in Sources */,
 				0A0000010000000000000004 /* HomeViewModel.swift in Sources */,
+				1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -634,6 +656,7 @@
 		0A0000010000000000001103 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Campa/Campa.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -650,6 +673,7 @@
 		0A0000010000000000001104 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Campa/Campa.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;

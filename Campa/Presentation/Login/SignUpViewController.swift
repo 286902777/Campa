@@ -26,7 +26,7 @@ final class SignUpViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        self.navType = .back
         configureTitleLabel()
         configureFields()
         configureSignUpButton()
