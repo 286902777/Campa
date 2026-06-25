@@ -1,4 +1,24 @@
+import CryptoKit
 import Foundation
+
+struct SignUpRegistrationDraft {
+    let email: String
+    let passwordHash: String
+}
+
+enum SignUpValidationError: Error, Equatable {
+    case passwordTooShort
+    case passwordMismatch
+
+    var message: String {
+        switch self {
+        case .passwordTooShort:
+            return NSLocalizedString("Password must be at least 6 characters", comment: "Sign up password too short")
+        case .passwordMismatch:
+            return NSLocalizedString("Passwords do not match", comment: "Sign up password mismatch")
+        }
+    }
+}
 
 final class SignUpViewModel {
     let title = NSLocalizedString("Sign up", comment: "Sign up screen title")
@@ -6,4 +26,29 @@ final class SignUpViewModel {
     let passwordPlaceholder = NSLocalizedString("Password", comment: "Password field placeholder")
     let confirmPasswordPlaceholder = NSLocalizedString("Enter the password again", comment: "Confirm password placeholder")
     let signUpButtonTitle = NSLocalizedString("Sign up", comment: "Sign up button title")
+
+    func makeRegistrationDraft(
+        email: String?,
+        password: String?,
+        confirmPassword: String?
+    ) -> Result<SignUpRegistrationDraft, SignUpValidationError> {
+        let trimmedEmail = email?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let password = password ?? ""
+        let confirmPassword = confirmPassword ?? ""
+
+        guard password.count >= 6 else {
+            return .failure(.passwordTooShort)
+        }
+
+        guard password == confirmPassword else {
+            return .failure(.passwordMismatch)
+        }
+
+        return .success(SignUpRegistrationDraft(email: trimmedEmail, passwordHash: Self.hash(password)))
+    }
+
+    private static func hash(_ password: String) -> String {
+        let digest = SHA256.hash(data: Data(password.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
 }

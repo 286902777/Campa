@@ -10,12 +10,9 @@ final class PersonalInfoViewController: BaseViewController {
         static let textColor = UIColor(red: 0.28, green: 0.02, blue: 0.01, alpha: 1.0)
     }
 
-    private enum Gender {
-        case male
-        case female
-    }
-
     private let viewModel: PersonalInfoViewModel
+    private let registrationDraft: SignUpRegistrationDraft?
+    private let userRepository: UserRepository
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let avatarContainer = UIView()
@@ -29,18 +26,26 @@ final class PersonalInfoViewController: BaseViewController {
     private let locationLabel = UILabel()
     private let locationField = PersonalInfoTextField()
     private let genderLabel = UILabel()
-    private let maleButton = UIButton(type: .system)
-    private let femaleButton = UIButton(type: .system)
-    private let saveButton = UIButton(type: .system)
+    private let maleButton = UIButton(type: .custom)
+    private let femaleButton = UIButton(type: .custom)
+    private let saveButton = UIButton(type: .custom)
     private let datePicker = UIDatePicker()
     private let countryPicker = UIPickerView()
     private let birthdayFormatter = DateFormatter()
 
-    private var selectedGender: Gender?
+    private var selectedGender: PersonalInfoGender
     private var selectedCountryIndex = 0
+    private var selectedAvatarLocalPath: String?
 
-    init(viewModel: PersonalInfoViewModel = PersonalInfoViewModel()) {
+    init(
+        registrationDraft: SignUpRegistrationDraft? = nil,
+        viewModel: PersonalInfoViewModel = PersonalInfoViewModel(),
+        userRepository: UserRepository = UserRepository()
+    ) {
         self.viewModel = viewModel
+        self.registrationDraft = registrationDraft
+        self.userRepository = userRepository
+        self.selectedGender = viewModel.defaultGender
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -97,6 +102,11 @@ final class PersonalInfoViewController: BaseViewController {
         cameraImageView.image = UIImage(named: "photo")
         cameraImageView.contentMode = .scaleAspectFit
         cameraImageView.tintColor = .white
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAvatarTapped))
+        avatarContainer.addGestureRecognizer(tapGesture)
+        avatarContainer.isUserInteractionEnabled = true
+        avatarImageView.isUserInteractionEnabled = true
     }
 
     private func configureLabels() {
@@ -166,6 +176,7 @@ final class PersonalInfoViewController: BaseViewController {
         saveButton.backgroundColor = Constants.textColor
         saveButton.layer.cornerRadius = Constants.buttonHeight / 2
         saveButton.accessibilityIdentifier = "personalInfoSaveButton"
+        saveButton.addTarget(self, action: #selector(handleSaveTapped), for: .touchUpInside)
     }
 
     private func configureLayout() {
@@ -306,6 +317,134 @@ final class PersonalInfoViewController: BaseViewController {
     @objc private func handleFemaleTapped() {
         selectedGender = .female
         updateGenderButtons()
+    }
+
+    @objc private func handleAvatarTapped() {
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else {
+            return
+        }
+
+        let picker = UIImagePickerController()
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    @objc private func handleSaveTapped() {
+        guard let registrationDraft else {
+            showToast(message: viewModel.missingRegistrationMessage)
+            return
+        }
+
+        let nickname = nameField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let location = locationField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        guard !nickname.isEmpty, !location.isEmpty, let birthday = selectedBirthday else {
+            showToast(message: viewModel.requiredInfoMessage)
+            return
+        }
+
+        let result = userRepository.createRegisteredCurrentUser(
+            email: registrationDraft.email,
+            passwordHash: registrationDraft.passwordHash,
+            nickname: nickname,
+            birthday: birthday,
+            location: location,
+            gender: selectedGender.rawValue,
+            avatarLocalPath: selectedAvatarLocalPath
+        )
+
+        switch result {
+        case .success(let user):
+            UserDefaults.standard.set(user.id.uuidString, forKey: CurrentUserIdKey)
+            switchToMainTabBarController()
+        case .failure:
+            showToast(message: viewModel.saveFailedMessage)
+        }
+    }
+
+    private func switchToMainTabBarController() {
+        guard let window = view.window else { return }
+
+        window.rootViewController = MainTabBarController()
+        window.makeKeyAndVisible()
+    }
+
+    private var selectedBirthday: Date? {
+        guard let text = birthdayField.text, !text.isEmpty else {
+            return nil
+        }
+
+        return birthdayFormatter.date(from: text)
+    }
+
+    private func saveAvatarImage(_ image: UIImage) -> String? {
+        guard let imageData = image.jpegData(compressionQuality: 0.88),
+              let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let avatarsDirectoryURL = documentsURL.appendingPathComponent("Avatars", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: avatarsDirectoryURL, withIntermediateDirectories: true)
+            let fileURL = avatarsDirectoryURL.appendingPathComponent("\(UUID().uuidString).jpg")
+            try imageData.write(to: fileURL, options: .atomic)
+            return fileURL.path
+        } catch {
+            return nil
+        }
+    }
+
+    private func showToast(message: String) {
+        let toastLabel = UILabel()
+        toastLabel.translatesAutoresizingMaskIntoConstraints = false
+        toastLabel.text = message
+        toastLabel.textColor = .white
+        toastLabel.font = AppFont.medium(size: 13)
+        toastLabel.textAlignment = .center
+        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.72)
+        toastLabel.layer.cornerRadius = 18
+        toastLabel.clipsToBounds = true
+        toastLabel.alpha = 0
+        toastLabel.accessibilityIdentifier = "personalInfoToastLabel"
+
+        view.addSubview(toastLabel)
+
+        NSLayoutConstraint.activate([
+            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            toastLabel.bottomAnchor.constraint(equalTo: saveButton.topAnchor, constant: -18),
+            toastLabel.heightAnchor.constraint(equalToConstant: 36),
+            toastLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 190)
+        ])
+
+        UIView.animate(withDuration: 0.2, animations: {
+            toastLabel.alpha = 1
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.2, delay: 1.4, options: [], animations: {
+                toastLabel.alpha = 0
+            }, completion: { _ in
+                toastLabel.removeFromSuperview()
+            })
+        })
+    }
+}
+
+extension PersonalInfoViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+    ) {
+        let image = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+        if let image {
+            avatarImageView.image = image
+            selectedAvatarLocalPath = saveAvatarImage(image)
+        }
+        picker.dismiss(animated: true)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 }
 

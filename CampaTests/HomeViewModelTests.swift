@@ -30,6 +30,62 @@ final class LoginViewModelTests: XCTestCase {
     }
 }
 
+final class SignUpViewModelTests: XCTestCase {
+    func testRegistrationRequiresPasswordAtLeastSixCharacters() {
+        let viewModel = SignUpViewModel()
+
+        let result = viewModel.makeRegistrationDraft(
+            email: "ari@example.com",
+            password: "12345",
+            confirmPassword: "12345"
+        )
+
+        if case .failure(.passwordTooShort) = result {
+            return
+        }
+
+        XCTFail("Expected passwordTooShort validation failure")
+    }
+
+    func testRegistrationRequiresMatchingPasswords() {
+        let viewModel = SignUpViewModel()
+
+        let result = viewModel.makeRegistrationDraft(
+            email: "ari@example.com",
+            password: "123456",
+            confirmPassword: "654321"
+        )
+
+        if case .failure(.passwordMismatch) = result {
+            return
+        }
+
+        XCTFail("Expected passwordMismatch validation failure")
+    }
+
+    func testRegistrationDraftStoresPasswordHash() throws {
+        let viewModel = SignUpViewModel()
+
+        let draft = try viewModel.makeRegistrationDraft(
+            email: "ari@example.com",
+            password: "123456",
+            confirmPassword: "123456"
+        ).get()
+
+        XCTAssertEqual(draft.email, "ari@example.com")
+        XCTAssertNotEqual(draft.passwordHash, "123456")
+        XCTAssertFalse(draft.passwordHash.isEmpty)
+    }
+}
+
+final class PersonalInfoViewModelTests: XCTestCase {
+    func testDefaultGenderIsMale() {
+        let viewModel = PersonalInfoViewModel()
+
+        XCTAssertEqual(viewModel.defaultGender, .male)
+    }
+}
+
 final class AuthEntryViewModelTests: XCTestCase {
     func testAuthEntryContentMatchesDesign() {
         let viewModel = AuthEntryViewModel()

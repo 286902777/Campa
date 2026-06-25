@@ -13,7 +13,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = RootNavigationController()
+        if let userId = UserDefaults.standard.string(forKey: CurrentUserIdKey), userId.count > 0 {
+            window.rootViewController = MainTabBarController()
+        } else {
+            window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
+        }
         window.makeKeyAndVisible()
         self.window = window
     }

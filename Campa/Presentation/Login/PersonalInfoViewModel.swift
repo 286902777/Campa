@@ -1,5 +1,10 @@
 import Foundation
 
+enum PersonalInfoGender: String {
+    case male
+    case female
+}
+
 final class PersonalInfoViewModel {
     let nameTitle = NSLocalizedString("Name:", comment: "Personal info name label")
     let birthdayTitle = NSLocalizedString("Birthday:", comment: "Personal info birthday label")
@@ -11,6 +16,10 @@ final class PersonalInfoViewModel {
     let maleTitle = NSLocalizedString("Male", comment: "Male gender option")
     let femaleTitle = NSLocalizedString("Female", comment: "Female gender option")
     let saveTitle = NSLocalizedString("Save", comment: "Save personal info")
+    let defaultGender: PersonalInfoGender = .male
+    let requiredInfoMessage = NSLocalizedString("Please complete all information", comment: "Personal info required fields toast")
+    let missingRegistrationMessage = NSLocalizedString("Missing sign up information", comment: "Missing registration draft toast")
+    let saveFailedMessage = NSLocalizedString("Save failed", comment: "Personal info save failure toast")
 
     let countryNames: [String]
 

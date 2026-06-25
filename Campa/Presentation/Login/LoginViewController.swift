@@ -73,7 +73,7 @@ final class LoginViewController: BaseViewController {
         loginButton.translatesAutoresizingMaskIntoConstraints = false
         loginButton.setTitle(viewModel.loginButtonTitle, for: .normal)
         loginButton.setTitleColor(.white, for: .normal)
-        loginButton.titleLabel?.font = AppFont.semibold(size: 24)
+        loginButton.titleLabel?.font = AppFont.semibold(size: 18)
         loginButton.backgroundColor = UIColor(red: 0.28, green: 0.02, blue: 0.01, alpha: 1.0)
         loginButton.layer.cornerRadius = Constants.buttonHeight / 2
         loginButton.accessibilityIdentifier = "loginButton"

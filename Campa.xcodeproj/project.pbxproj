@@ -21,7 +21,6 @@
 		0A0000010000000000000012 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000116 /* LoginViewModel.swift */; };
 		0A0000010000000000000013 /* AuthEntryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000117 /* AuthEntryViewController.swift */; };
 		0A0000010000000000000014 /* AuthEntryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000118 /* AuthEntryViewModel.swift */; };
-		0A0000010000000000000015 /* RootNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000119 /* RootNavigationController.swift */; };
 		0A0000010000000000000016 /* SignUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000120 /* SignUpViewController.swift */; };
 		0A0000010000000000000017 /* SignUpViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000121 /* SignUpViewModel.swift */; };
 		0A0000010000000000000018 /* ForgotPasswordViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000122 /* ForgotPasswordViewController.swift */; };
@@ -41,12 +40,27 @@
 		0A0000010000000000000030 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001301 /* Alamofire */; };
 		0A0000010000000000000031 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001302 /* SnapKit */; };
 		0A0000010000000000000032 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001303 /* IQKeyboardManagerSwift */; };
+		0B0000010000000000000001 /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000101 /* CoreDataStack.swift */; };
+		0B0000010000000000000002 /* PersistenceEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000102 /* PersistenceEntities.swift */; };
+		0B0000010000000000000003 /* PersistenceEnums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000103 /* PersistenceEnums.swift */; };
+		0B0000010000000000000004 /* PersistenceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000104 /* PersistenceError.swift */; };
+		0B0000010000000000000005 /* UserRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000105 /* UserRepository.swift */; };
+		0B0000010000000000000006 /* ChatRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000106 /* ChatRepository.swift */; };
+		0B0000010000000000000007 /* PostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000107 /* PostRepository.swift */; };
+		0B0000010000000000000008 /* ActivityRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000108 /* ActivityRepository.swift */; };
+		0B0000010000000000000009 /* CoreDataStackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000109 /* CoreDataStackTests.swift */; };
+		0B000001000000000000000A /* PersistenceEnumsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010A /* PersistenceEnumsTests.swift */; };
+		0B000001000000000000000B /* UserRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010B /* UserRepositoryTests.swift */; };
+		0B000001000000000000000C /* ChatRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010C /* ChatRepositoryTests.swift */; };
+		0B000001000000000000000D /* PostRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010D /* PostRepositoryTests.swift */; };
+		0B000001000000000000000E /* ActivityRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010E /* ActivityRepositoryTests.swift */; };
 		1746C5A32FEBE74900305DF9 /* BaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5A22FEBE74900305DF9 /* BaseViewController.swift */; };
 		1746C5A92FEBF2BF00305DF9 /* PayAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */; };
 		1746C5AB2FECC89200305DF9 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AA2FECC89200305DF9 /* WebViewController.swift */; };
 		1746C5AD2FECCDD400305DF9 /* EmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AC2FECCDD400305DF9 /* EmptyView.swift */; };
 		1746C5AF2FED11AB00305DF9 /* ReportAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */; };
 		1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FEDE00100305DF9 /* PostViewController.swift */; };
+		1746C5B12FED348900305DF9 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B02FED348900305DF9 /* AppInfo.swift */; };
 		1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B22FEE318500305DF9 /* CampusViewController.swift */; };
 		1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */; };
 /* End PBXBuildFile section */
@@ -87,7 +101,6 @@
 		0A0000010000000000000116 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
 		0A0000010000000000000117 /* AuthEntryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthEntryViewController.swift; sourceTree = "<group>"; };
 		0A0000010000000000000118 /* AuthEntryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthEntryViewModel.swift; sourceTree = "<group>"; };
-		0A0000010000000000000119 /* RootNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootNavigationController.swift; sourceTree = "<group>"; };
 		0A0000010000000000000120 /* SignUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpViewController.swift; sourceTree = "<group>"; };
 		0A0000010000000000000121 /* SignUpViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpViewModel.swift; sourceTree = "<group>"; };
 		0A0000010000000000000122 /* ForgotPasswordViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordViewController.swift; sourceTree = "<group>"; };
@@ -104,12 +117,28 @@
 		0A000001000000000000012D /* PersonalInfoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalInfoViewModel.swift; sourceTree = "<group>"; };
 		0A000001000000000000012E /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
 		0A000001000000000000012F /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
+		0B0000010000000000000101 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
+		0B0000010000000000000102 /* PersistenceEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEntities.swift; sourceTree = "<group>"; };
+		0B0000010000000000000103 /* PersistenceEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEnums.swift; sourceTree = "<group>"; };
+		0B0000010000000000000104 /* PersistenceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceError.swift; sourceTree = "<group>"; };
+		0B0000010000000000000105 /* UserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepository.swift; sourceTree = "<group>"; };
+		0B0000010000000000000106 /* ChatRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRepository.swift; sourceTree = "<group>"; };
+		0B0000010000000000000107 /* PostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRepository.swift; sourceTree = "<group>"; };
+		0B0000010000000000000108 /* ActivityRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRepository.swift; sourceTree = "<group>"; };
+		0B0000010000000000000109 /* CoreDataStackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStackTests.swift; sourceTree = "<group>"; };
+		0B000001000000000000010A /* PersistenceEnumsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEnumsTests.swift; sourceTree = "<group>"; };
+		0B000001000000000000010B /* UserRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepositoryTests.swift; sourceTree = "<group>"; };
+		0B000001000000000000010C /* ChatRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRepositoryTests.swift; sourceTree = "<group>"; };
+		0B000001000000000000010D /* PostRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRepositoryTests.swift; sourceTree = "<group>"; };
+		0B000001000000000000010E /* ActivityRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRepositoryTests.swift; sourceTree = "<group>"; };
+		0B000001000000000000010F /* Campa.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodeld; path = Campa.xcdatamodeld; sourceTree = "<group>"; };
 		1746C5A22FEBE74900305DF9 /* BaseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewController.swift; sourceTree = "<group>"; };
 		1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayAlertController.swift; sourceTree = "<group>"; };
 		1746C5AA2FECC89200305DF9 /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		1746C5AC2FECCDD400305DF9 /* EmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyView.swift; sourceTree = "<group>"; };
 		1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportAlertController.swift; sourceTree = "<group>"; };
 		1746C5AE2FEDE00100305DF9 /* PostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewController.swift; sourceTree = "<group>"; };
+		1746C5B02FED348900305DF9 /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
 		1746C5B12FEE015A00305DF9 /* Campa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Campa.entitlements; sourceTree = "<group>"; };
 		1746C5B22FEE318500305DF9 /* CampusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampusViewController.swift; sourceTree = "<group>"; };
 		1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViewController.swift; sourceTree = "<group>"; };
@@ -157,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				0A0000010000000000000603 /* App */,
+				0B0000010000000000000601 /* Data */,
 				0A0000010000000000000604 /* Presentation */,
 				0A0000010000000000000606 /* Resources */,
 				1746C5B12FEE015A00305DF9 /* Campa.entitlements */,
@@ -217,6 +247,12 @@
 			isa = PBXGroup;
 			children = (
 				0A0000010000000000000107 /* HomeViewModelTests.swift */,
+				0B0000010000000000000109 /* CoreDataStackTests.swift */,
+				0B000001000000000000010A /* PersistenceEnumsTests.swift */,
+				0B000001000000000000010B /* UserRepositoryTests.swift */,
+				0B000001000000000000010C /* ChatRepositoryTests.swift */,
+				0B000001000000000000010D /* PostRepositoryTests.swift */,
+				0B000001000000000000010E /* ActivityRepositoryTests.swift */,
 			);
 			path = CampaTests;
 			sourceTree = "<group>";
@@ -275,7 +311,6 @@
 		0A0000010000000000000613 /* Root */ = {
 			isa = PBXGroup;
 			children = (
-				0A0000010000000000000119 /* RootNavigationController.swift */,
 				0A0000010000000000000124 /* MainTabBarController.swift */,
 			);
 			path = Root;
@@ -296,6 +331,7 @@
 			isa = PBXGroup;
 			children = (
 				0A0000010000000000000127 /* AppFont.swift */,
+				1746C5B02FED348900305DF9 /* AppInfo.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -310,6 +346,46 @@
 				1746C5AA2FECC89200305DF9 /* WebViewController.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		0B0000010000000000000601 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				0B0000010000000000000602 /* Persistence */,
+				0B0000010000000000000603 /* Models */,
+				0B0000010000000000000604 /* Repositories */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		0B0000010000000000000602 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				0B0000010000000000000101 /* CoreDataStack.swift */,
+				0B000001000000000000010F /* Campa.xcdatamodeld */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		0B0000010000000000000603 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				0B0000010000000000000102 /* PersistenceEntities.swift */,
+				0B0000010000000000000103 /* PersistenceEnums.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		0B0000010000000000000604 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				0B0000010000000000000104 /* PersistenceError.swift */,
+				0B0000010000000000000105 /* UserRepository.swift */,
+				0B0000010000000000000106 /* ChatRepository.swift */,
+				0B0000010000000000000107 /* PostRepository.swift */,
+				0B0000010000000000000108 /* ActivityRepository.swift */,
+			);
+			path = Repositories;
 			sourceTree = "<group>";
 		};
 		1746C5A42FEBF02300305DF9 /* Alert */ = {
@@ -496,7 +572,6 @@
 				0A0000010000000000000001 /* AppDelegate.swift in Sources */,
 				0A0000010000000000000002 /* SceneDelegate.swift in Sources */,
 				0A000001000000000000001D /* AppFont.swift in Sources */,
-				0A0000010000000000000015 /* RootNavigationController.swift in Sources */,
 				0A000001000000000000001A /* MainTabBarController.swift in Sources */,
 				1746C5A92FEBF2BF00305DF9 /* PayAlertController.swift in Sources */,
 				1746C5A32FEBE74900305DF9 /* BaseViewController.swift in Sources */,
@@ -510,6 +585,7 @@
 				0A0000010000000000000022 /* PersonalInfoViewController.swift in Sources */,
 				0A0000010000000000000023 /* PersonalInfoViewModel.swift in Sources */,
 				0A0000010000000000000018 /* ForgotPasswordViewController.swift in Sources */,
+				1746C5B12FED348900305DF9 /* AppInfo.swift in Sources */,
 				0A0000010000000000000019 /* ForgotPasswordViewModel.swift in Sources */,
 				0A000001000000000000001B /* MessagesViewController.swift in Sources */,
 				0A000001000000000000001C /* MessagesViewModel.swift in Sources */,
@@ -525,6 +601,14 @@
 				1746C5AD2FECCDD400305DF9 /* EmptyView.swift in Sources */,
 				0A0000010000000000000003 /* HomeViewController.swift in Sources */,
 				0A0000010000000000000004 /* HomeViewModel.swift in Sources */,
+				0B0000010000000000000001 /* CoreDataStack.swift in Sources */,
+				0B0000010000000000000002 /* PersistenceEntities.swift in Sources */,
+				0B0000010000000000000003 /* PersistenceEnums.swift in Sources */,
+				0B0000010000000000000004 /* PersistenceError.swift in Sources */,
+				0B0000010000000000000005 /* UserRepository.swift in Sources */,
+				0B0000010000000000000006 /* ChatRepository.swift in Sources */,
+				0B0000010000000000000007 /* PostRepository.swift in Sources */,
+				0B0000010000000000000008 /* ActivityRepository.swift in Sources */,
 				1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */,
 				1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */,
 				1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */,
@@ -536,6 +620,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				0A0000010000000000000007 /* HomeViewModelTests.swift in Sources */,
+				0B0000010000000000000009 /* CoreDataStackTests.swift in Sources */,
+				0B000001000000000000000A /* PersistenceEnumsTests.swift in Sources */,
+				0B000001000000000000000B /* UserRepositoryTests.swift in Sources */,
+				0B000001000000000000000C /* ChatRepositoryTests.swift in Sources */,
+				0B000001000000000000000D /* PostRepositoryTests.swift in Sources */,
+				0B000001000000000000000E /* ActivityRepositoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

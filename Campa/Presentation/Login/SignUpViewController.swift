@@ -67,7 +67,7 @@ final class SignUpViewController: BaseViewController {
         signUpButton.translatesAutoresizingMaskIntoConstraints = false
         signUpButton.setTitle(viewModel.signUpButtonTitle, for: .normal)
         signUpButton.setTitleColor(.white, for: .normal)
-        signUpButton.titleLabel?.font = AppFont.semibold(size: 24)
+        signUpButton.titleLabel?.font = AppFont.semibold(size: 18)
         signUpButton.backgroundColor = UIColor(red: 0.28, green: 0.02, blue: 0.01, alpha: 1.0)
         signUpButton.layer.cornerRadius = Constants.buttonHeight / 2
         signUpButton.accessibilityIdentifier = "signUpButton"
@@ -112,6 +112,48 @@ final class SignUpViewController: BaseViewController {
     }
 
     @objc private func handleSignUpTapped() {
-        navigationController?.pushViewController(PersonalInfoViewController(), animated: true)
+        switch viewModel.makeRegistrationDraft(
+            email: emailField.text,
+            password: passwordField.text,
+            confirmPassword: confirmPasswordField.text
+        ) {
+        case .success(let draft):
+            navigationController?.pushViewController(PersonalInfoViewController(registrationDraft: draft), animated: true)
+        case .failure(let error):
+            showToast(message: error.message)
+        }
+    }
+
+    private func showToast(message: String) {
+        let toastLabel = UILabel()
+        toastLabel.translatesAutoresizingMaskIntoConstraints = false
+        toastLabel.text = message
+        toastLabel.textColor = .white
+        toastLabel.font = AppFont.medium(size: 13)
+        toastLabel.textAlignment = .center
+        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.72)
+        toastLabel.layer.cornerRadius = 18
+        toastLabel.clipsToBounds = true
+        toastLabel.alpha = 0
+        toastLabel.accessibilityIdentifier = "signUpToastLabel"
+
+        view.addSubview(toastLabel)
+
+        NSLayoutConstraint.activate([
+            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            toastLabel.topAnchor.constraint(equalTo: signUpButton.bottomAnchor, constant: 18),
+            toastLabel.heightAnchor.constraint(equalToConstant: 36),
+            toastLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 190)
+        ])
+
+        UIView.animate(withDuration: 0.2, animations: {
+            toastLabel.alpha = 1
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.2, delay: 1.4, options: [], animations: {
+                toastLabel.alpha = 0
+            }, completion: { _ in
+                toastLabel.removeFromSuperview()
+            })
+        })
     }
 }

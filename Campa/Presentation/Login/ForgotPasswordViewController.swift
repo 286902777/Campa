@@ -66,7 +66,7 @@ final class ForgotPasswordViewController: BaseViewController {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.setTitle(viewModel.submitButtonTitle, for: .normal)
         submitButton.setTitleColor(.white, for: .normal)
-        submitButton.titleLabel?.font = AppFont.semibold(size: 24)
+        submitButton.titleLabel?.font = AppFont.semibold(size: 18)
         submitButton.backgroundColor = UIColor(red: 0.28, green: 0.02, blue: 0.01, alpha: 1.0)
         submitButton.layer.cornerRadius = Constants.buttonHeight / 2
         submitButton.accessibilityIdentifier = "forgotPasswordSubmitButton"

@@ -4,13 +4,13 @@ final class SettingsViewController: BaseViewController {
     fileprivate enum Constants {
         static let horizontalInset: CGFloat = 22
         static let rowHeight: CGFloat = 44
-        static let buttonHeight: CGFloat = 36
+        static let buttonHeight: CGFloat = 62
     }
 
     private let viewModel: SettingsViewModel
     private let rowsStackView = UIStackView()
-    private let deleteAccountButton = UIButton(type: .system)
-    private let logOutButton = UIButton(type: .system)
+    private let deleteAccountButton = UIButton(type: .custom)
+    private let logOutButton = UIButton(type: .custom)
 
     init(viewModel: SettingsViewModel = SettingsViewModel()) {
         self.viewModel = viewModel
@@ -62,13 +62,28 @@ final class SettingsViewController: BaseViewController {
 
         view.addSubview(deleteAccountButton)
         view.addSubview(logOutButton)
+        deleteAccountButton.addTarget(self, action: #selector(clickdDeleteAction), for: .touchUpInside)
+        logOutButton.addTarget(self, action: #selector(clickLogoutAction), for: .touchUpInside)
+
+    }
+    
+    @objc func clickdDeleteAction() {
+        
+    }
+    
+    @objc func clickLogoutAction() {
+        UserDefaults.standard.set("", forKey: CurrentUserIdKey)
+        UserDefaults.standard.synchronize()
+        guard let window = view.window else { return }
+        window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
+        window.makeKeyAndVisible()
     }
 
     private func configureActionButton(_ button: UIButton, title: String, backgroundColor: UIColor) {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle(title, for: .normal)
         button.setTitleColor(UIColor(red: 0.28, green: 0.02, blue: 0.02, alpha: 1.0), for: .normal)
-        button.titleLabel?.font = AppFont.medium(size: 13)
+        button.titleLabel?.font = AppFont.semibold(size: 18)
         button.backgroundColor = backgroundColor
         button.layer.cornerRadius = Constants.buttonHeight / 2
     }

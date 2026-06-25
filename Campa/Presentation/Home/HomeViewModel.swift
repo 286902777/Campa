@@ -11,6 +11,7 @@ final class HomeViewModel {
     }
 
     let greetingTitle = NSLocalizedString("Good Morning, Jiwoo", comment: "Home greeting title")
+    let title = NSLocalizedString("Campa", comment: "App title")
     let subtitle = NSLocalizedString("Connect beyond classrooms.", comment: "Home subtitle")
     let searchPlaceholder = NSLocalizedString("Search posts, people, clubs...", comment: "Home search placeholder")
     let searchButtonTitle = NSLocalizedString("Search", comment: "Home search button")
