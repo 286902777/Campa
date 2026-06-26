@@ -355,36 +355,13 @@ final class AuthEntryViewController: UIViewController {
     }
 
     private func showToast(message: String) {
-        let toastLabel = UILabel()
-        toastLabel.translatesAutoresizingMaskIntoConstraints = false
-        toastLabel.text = message
-        toastLabel.textColor = .white
-        toastLabel.font = AppFont.medium(size: 13)
-        toastLabel.textAlignment = .center
-        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.72)
-        toastLabel.layer.cornerRadius = 18
-        toastLabel.clipsToBounds = true
-        toastLabel.alpha = 0
-        toastLabel.accessibilityIdentifier = "agreementToastLabel"
-
-        view.addSubview(toastLabel)
-
-        NSLayoutConstraint.activate([
-            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            toastLabel.bottomAnchor.constraint(equalTo: agreementStackView.topAnchor, constant: -24),
-            toastLabel.heightAnchor.constraint(equalToConstant: 36),
-            toastLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 150)
-        ])
-
-        UIView.animate(withDuration: 0.2, animations: {
-            toastLabel.alpha = 1
-        }, completion: { _ in
-            UIView.animate(withDuration: 0.2, delay: 1.4, options: [], animations: {
-                toastLabel.alpha = 0
-            }, completion: { _ in
-                toastLabel.removeFromSuperview()
-            })
-        })
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .above(agreementStackView.topAnchor, spacing: 24),
+            minWidth: 150,
+            accessibilityIdentifier: "agreementToastLabel"
+        )
     }
 }
 

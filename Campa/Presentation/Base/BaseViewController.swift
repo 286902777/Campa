@@ -100,10 +100,9 @@ class BaseViewController: UIViewController {
                 backBtn.heightAnchor.constraint(equalToConstant: 36)
             ])
             NSLayoutConstraint.activate([
-                titleL.centerXAnchor.constraint(equalTo: navBar.centerXAnchor),
                 titleL.centerYAnchor.constraint(equalTo: navBar.centerYAnchor),
-                titleL.leadingAnchor.constraint(greaterThanOrEqualTo: backBtn.trailingAnchor, constant: 20),
-                titleL.trailingAnchor.constraint(equalTo: navBar.trailingAnchor, constant: -20),
+                titleL.leadingAnchor.constraint(equalTo: backBtn.trailingAnchor, constant: 20),
+                titleL.trailingAnchor.constraint(greaterThanOrEqualTo: navBar.trailingAnchor, constant: -20),
             ])
             
         case .backRightBtn:

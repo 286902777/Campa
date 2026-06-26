@@ -8,12 +8,14 @@ final class SettingsViewController: BaseViewController {
     }
 
     private let viewModel: SettingsViewModel
+    private let userRepository: UserRepository
     private let rowsStackView = UIStackView()
     private let deleteAccountButton = UIButton(type: .custom)
     private let logOutButton = UIButton(type: .custom)
 
-    init(viewModel: SettingsViewModel = SettingsViewModel()) {
+    init(viewModel: SettingsViewModel = SettingsViewModel(), userRepository: UserRepository = UserRepository()) {
         self.viewModel = viewModel
+        self.userRepository = userRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -42,7 +44,13 @@ final class SettingsViewController: BaseViewController {
         rowsStackView.spacing = 0
 
         viewModel.rows
-            .map(SettingsPlainRowView.init(row:))
+            .enumerated()
+            .map { index, row in
+                let rowView = SettingsPlainRowView(row: row)
+                rowView.tag = index
+                rowView.addTarget(self, action: #selector(handleRowTapped(_:)), for: .touchUpInside)
+                return rowView
+            }
             .forEach(rowsStackView.addArrangedSubview)
 
         view.addSubview(rowsStackView)
@@ -68,15 +76,63 @@ final class SettingsViewController: BaseViewController {
     }
     
     @objc func clickdDeleteAction() {
-        
+        let vc = DeleteUserAlertController()
+        vc.modalPresentationStyle = .overFullScreen
+        vc.actionHandler = { [weak self] in
+            self?.deleteCurrentUser()
+        }
+        self.present(vc, animated: false)
+    }
+
+    @objc private func handleRowTapped(_ sender: UIControl) {
+        switch sender.tag {
+        case 0:
+            let vc = EditProfileViewController()
+            vc.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(vc, animated: true)
+        case 1:
+            let vc = BlacklistViewController()
+            vc.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(vc, animated: true)
+        default:
+            return
+        }
+    }
+
+    private func deleteCurrentUser() {
+        let userResult = userRepository.fetchCurrentUser()
+        guard case .success(let user) = userResult,
+              let email = user.email?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !email.isEmpty else {
+            showToast(message: NSLocalizedString("Failed to delete account", comment: "Delete account failed toast"))
+            return
+        }
+
+        switch userRepository.deleteUser(email: email) {
+        case .success:
+            AppLoading.show(in: self.view) { [weak self] in
+                guard let self = self else { return }
+                UserDefaults.standard.set("", forKey: CurrentUserIdKey)
+                UserDefaults.standard.synchronize()
+                showToast(message: NSLocalizedString("Account deleted successfully", comment: "Delete account success toast"))
+                guard let window = view.window else { return }
+                window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
+                window.makeKeyAndVisible()
+            }
+        case .failure:
+            showToast(message: NSLocalizedString("Failed to delete account", comment: "Delete account failed toast"))
+        }
     }
     
     @objc func clickLogoutAction() {
-        UserDefaults.standard.set("", forKey: CurrentUserIdKey)
-        UserDefaults.standard.synchronize()
-        guard let window = view.window else { return }
-        window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
-        window.makeKeyAndVisible()
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            UserDefaults.standard.set("", forKey: CurrentUserIdKey)
+            UserDefaults.standard.synchronize()
+            guard let window = view.window else { return }
+            window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
+            window.makeKeyAndVisible()
+        }
     }
 
     private func configureActionButton(_ button: UIButton, title: String, backgroundColor: UIColor) {
@@ -86,6 +142,15 @@ final class SettingsViewController: BaseViewController {
         button.titleLabel?.font = AppFont.semibold(size: 18)
         button.backgroundColor = backgroundColor
         button.layer.cornerRadius = Constants.buttonHeight / 2
+    }
+
+    private func showToast(message: String) {
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .above(deleteAccountButton.topAnchor, spacing: 18),
+            accessibilityIdentifier: "settingsToastLabel"
+        )
     }
 
     private func configureLayout() {

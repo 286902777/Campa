@@ -20,10 +20,14 @@ final class PostViewController: BaseViewController {
     private let locationIconView = UIImageView()
     private let locationLabel = UILabel()
     private let publishButton = UIButton(type: .system)
+    private let userRepository: UserRepository
+    private let postRepository: PostRepository
 
     private var selectedImages: [UIImage] = []
     private var collH: CGFloat = 0
-    init() {
+    init(userRepository: UserRepository = UserRepository(), postRepository: PostRepository = PostRepository()) {
+        self.userRepository = userRepository
+        self.postRepository = postRepository
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumLineSpacing = 12
@@ -51,6 +55,7 @@ final class PostViewController: BaseViewController {
         configureCollectionView()
         configureBoostView()
         configureLocation()
+        loadCurrentUserLocation()
         configurePublishButton()
         configureLayout()
     }
@@ -150,6 +155,18 @@ final class PostViewController: BaseViewController {
         view.addSubview(locationLabel)
     }
 
+    private func loadCurrentUserLocation() {
+        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+              let userId = UUID(uuidString: userIdString),
+              case .success(let user) = userRepository.fetchUser(id: userId),
+              let location = user.location?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !location.isEmpty else {
+            return
+        }
+
+        locationLabel.text = location
+    }
+
     private func configurePublishButton() {
         publishButton.translatesAutoresizingMaskIntoConstraints = false
         publishButton.setTitle(NSLocalizedString("Publish", comment: "Publish button title"), for: .normal)
@@ -157,6 +174,7 @@ final class PostViewController: BaseViewController {
         publishButton.titleLabel?.font = AppFont.medium(size: 16)
         publishButton.backgroundColor = Constants.darkTextColor
         publishButton.layer.cornerRadius = 22
+        publishButton.addTarget(self, action: #selector(handlePublishTapped), for: .touchUpInside)
         view.addSubview(publishButton)
     }
 
@@ -217,6 +235,83 @@ final class PostViewController: BaseViewController {
             publishButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -44),
             publishButton.heightAnchor.constraint(equalToConstant: 44)
         ])
+    }
+
+    @objc private func handlePublishTapped() {
+        let content = textView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let addressText = locationLabel.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        guard !content.isEmpty, !addressText.isEmpty, !selectedImages.isEmpty else {
+            showToast(message: NSLocalizedString("Please complete post information", comment: "Post required fields toast"))
+            return
+        }
+
+        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+              let userId = UUID(uuidString: userIdString),
+              case .success(let currentUser) = userRepository.fetchUser(id: userId) else {
+            showToast(message: NSLocalizedString("Failed to publish post", comment: "Post publish failed toast"))
+            return
+        }
+
+        let imagePaths = selectedImages.compactMap(savePostImage)
+        guard imagePaths.count == selectedImages.count else {
+            showToast(message: NSLocalizedString("Failed to save post images", comment: "Post image save failed toast"))
+            return
+        }
+
+        let result = postRepository.createPost(
+            author: currentUser,
+            title: makePostTitle(from: content),
+            content: content,
+            addressText: addressText,
+            imagePaths: imagePaths
+        )
+
+        switch result {
+        case .success:
+            showToast(message: NSLocalizedString("Post published", comment: "Post publish success toast"))
+            NotificationCenter.default.post(name: .postDidPublish, object: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.dismiss(animated: true)
+            }
+        case .failure:
+            showToast(message: NSLocalizedString("Failed to publish post", comment: "Post publish failed toast"))
+        }
+    }
+
+    private func makePostTitle(from content: String) -> String {
+        let firstLine = content
+            .components(separatedBy: .newlines)
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? content
+        return String(firstLine.prefix(30))
+    }
+
+    private func savePostImage(_ image: UIImage) -> String? {
+        guard let imageData = image.jpegData(compressionQuality: 0.88),
+              let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let postsDirectoryURL = documentsURL.appendingPathComponent("PostImages", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: postsDirectoryURL, withIntermediateDirectories: true)
+            let imageName = "\(UUID().uuidString).jpg"
+            let fileURL = postsDirectoryURL.appendingPathComponent(imageName)
+            try imageData.write(to: fileURL, options: .atomic)
+            return imageName
+        } catch {
+            return nil
+        }
+    }
+
+    private func showToast(message: String) {
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .above(publishButton.topAnchor, spacing: 18),
+            accessibilityIdentifier: "postToastLabel"
+        )
     }
 }
 

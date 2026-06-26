@@ -1,5 +1,5 @@
 //
-//  ReportAlertController.swift
+//  DeleteUserAlertController.swift
 //  Campa
 //
 //  Created by myfy on 2026/6/24.
@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 
 
-class ReportAlertController: UIViewController {
+class DeleteUserAlertController: UIViewController {
     
     private let alertContainer: UIView = {
         let view = UIView()
@@ -31,29 +31,21 @@ class ReportAlertController: UIViewController {
     
     private let hotImgV: UIImageView = {
         let view = UIImageView()
-        view.image = UIImage(named: "error_img")
+        view.image = UIImage(named: "delete")
         return view
     }()
 
-    private let reportButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.setTitleColor(UIColor(red: 52/255.0, green: 4/255.0, blue: 4/255.0, alpha: 1), for: .normal)
-        button.backgroundColor = UIColor.white
-        button.layer.cornerRadius = 25
-        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
-        return button
+    private let messageLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 14)
+        label.textColor = .darkGray
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.text = "Are you sure you want to delete this account? All data will be permanently cleared and cannot be restored. Please choose carefully."
+        return label
     }()
     
-    private let blackButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.setTitleColor(UIColor(red: 52/255.0, green: 4/255.0, blue: 4/255.0, alpha: 1), for: .normal)
-        button.backgroundColor = UIColor(red: 215/255.0, green: 220/255.0, blue: 56/255.0, alpha: 1)
-        button.layer.cornerRadius = 25
-        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
-        return button
-    }()
-    
-    private let cancelButton: UIButton = {
+    private let sureButton: UIButton = {
         let button = UIButton(type: .custom)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = UIColor(red: 52/255.0, green: 4/255.0, blue: 4/255.0, alpha: 1)
@@ -62,8 +54,17 @@ class ReportAlertController: UIViewController {
         return button
     }()
     
+    private let cancelButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.setTitleColor(UIColor(red: 52/255.0, green: 4/255.0, blue: 4/255.0, alpha: 1), for: .normal)
+        button.backgroundColor = UIColor(red: 215/255.0, green: 220/255.0, blue: 56/255.0, alpha: 1)
+        button.layer.cornerRadius = 25
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        return button
+    }()
+    
     // 按钮点击回调
-    var actionHandler: ((_ black: Bool) -> Void)?
+    var actionHandler: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -72,8 +73,8 @@ class ReportAlertController: UIViewController {
         view.addSubview(alertContainer)
         alertContainer.addSubview(alertBgImgV)
         alertContainer.addSubview(hotImgV)
-        alertContainer.addSubview(reportButton)
-        alertContainer.addSubview(blackButton)
+        alertContainer.addSubview(messageLabel)
+        alertContainer.addSubview(sureButton)
         alertContainer.addSubview(cancelButton)
         alertContainer.addSubview(lineView)
         alertContainer.snp.makeConstraints { make in
@@ -91,7 +92,13 @@ class ReportAlertController: UIViewController {
         hotImgV.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
             make.top.equalTo(25)
-            make.size.equalTo(CGSize(width: 105, height: 105))
+            make.size.equalTo(CGSize(width: 71, height: 71))
+        }
+        
+        messageLabel.snp.makeConstraints { make in
+            make.top.equalTo(hotImgV.snp.bottom).offset(12)
+            make.left.equalTo(25)
+            make.right.equalTo(-25)
         }
         
         cancelButton.snp.makeConstraints { make in
@@ -101,35 +108,21 @@ class ReportAlertController: UIViewController {
             make.height.equalTo(50)
         }
         
-        blackButton.snp.makeConstraints { make in
+        sureButton.snp.makeConstraints { make in
             make.bottom.equalTo(cancelButton.snp.top).offset(-14)
             make.left.equalTo(46)
             make.right.equalTo(-46)
             make.height.equalTo(50)
         }
         
-        reportButton.snp.makeConstraints { make in
-            make.bottom.equalTo(blackButton.snp.top).offset(-14)
-            make.left.equalTo(46)
-            make.right.equalTo(-46)
-            make.height.equalTo(50)
-        }
-        
-        reportButton.addTarget(self, action: #selector(clickReportAction), for: .touchUpInside)
-        blackButton.addTarget(self, action: #selector(clickBlackAction), for: .touchUpInside)
+        sureButton.addTarget(self, action: #selector(clickSureAction), for: .touchUpInside)
         cancelButton.addTarget(self, action: #selector(clickCancelAction), for: .touchUpInside)
-        self.reportButton.setTitle("Report", for: .normal)
-        self.blackButton.setTitle("Black", for: .normal)
+        self.sureButton.setTitle("Sure", for: .normal)
         self.cancelButton.setTitle("Cancel", for: .normal)
     }
     
-    @objc func clickReportAction() {
-        self.actionHandler?(false)
-        self.dismiss(animated: false)
-    }
-    
-    @objc func clickBlackAction() {
-        self.actionHandler?(true)
+    @objc func clickSureAction() {
+        self.actionHandler?()
         self.dismiss(animated: false)
     }
     

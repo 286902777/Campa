@@ -6,6 +6,7 @@ final class LoginViewController: BaseViewController {
         static let fieldHeight: CGFloat = 64
         static let buttonHeight: CGFloat = 62
         static let fieldCornerRadius: CGFloat = 40
+        static let currentUserIdKey = "currentUserId"
     }
 
     private let viewModel: LoginViewModel
@@ -14,9 +15,11 @@ final class LoginViewController: BaseViewController {
     private let passwordField = IconTextField(iconName: "password")
     private let forgotPasswordButton = UIButton(type: .system)
     private let loginButton = UIButton(type: .system)
+    private let userRepository: UserRepository
 
-    init(viewModel: LoginViewModel = LoginViewModel()) {
+    init(viewModel: LoginViewModel = LoginViewModel(), userRepository: UserRepository = UserRepository()) {
         self.viewModel = viewModel
+        self.userRepository = userRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -121,6 +124,28 @@ final class LoginViewController: BaseViewController {
     }
 
     @objc private func handleLoginTapped() {
+        let email = emailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let password = passwordField.text ?? ""
+
+        guard !email.isEmpty, !password.isEmpty else {
+            showToast(message: viewModel.emptyInputMessage)
+            return
+        }
+
+        let result = userRepository.login(email: email, passwordHash: viewModel.hash(password))
+        guard case .success(let user) = result else {
+            showToast(message: viewModel.loginFailedMessage)
+            return
+        }
+
+        UserDefaults.standard.set(user.id.uuidString, forKey: Constants.currentUserIdKey)
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.switchToMainTabBarController()
+        }
+    }
+
+    private func switchToMainTabBarController() {
         guard let window = view.window else {
             return
         }
@@ -128,6 +153,15 @@ final class LoginViewController: BaseViewController {
         UIView.transition(with: window, duration: 0.25, options: .transitionCrossDissolve) {
             window.rootViewController = MainTabBarController()
         }
+    }
+
+    private func showToast(message: String) {
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .above(loginButton.topAnchor, spacing: 18),
+            accessibilityIdentifier: "loginToastLabel"
+        )
     }
 }
 

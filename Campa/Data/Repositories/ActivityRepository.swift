@@ -104,6 +104,25 @@ final class ActivityRepository {
         }
     }
 
+    func fetchComments(forPostId postId: UUID) -> Result<[PostComment], PersistenceError> {
+        let postRequest = Post.fetchRequest()
+        postRequest.fetchLimit = 1
+        postRequest.predicate = NSPredicate(format: "id == %@", postId as CVarArg)
+
+        do {
+            guard let post = try context.fetch(postRequest).first else {
+                return .success([])
+            }
+
+            let request = PostComment.fetchRequest()
+            request.predicate = NSPredicate(format: "post == %@", post)
+            request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+            return .success(try context.fetch(request))
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
     private func hasParticipant(activity: Activity, user: User) -> Bool {
         let request = ActivityParticipant.fetchRequest()
         request.fetchLimit = 1

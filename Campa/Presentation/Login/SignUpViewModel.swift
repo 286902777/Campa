@@ -7,11 +7,14 @@ struct SignUpRegistrationDraft {
 }
 
 enum SignUpValidationError: Error, Equatable {
+    case invalidEmail
     case passwordTooShort
     case passwordMismatch
 
     var message: String {
         switch self {
+        case .invalidEmail:
+            return NSLocalizedString("Please enter a valid email", comment: "Sign up invalid email")
         case .passwordTooShort:
             return NSLocalizedString("Password must be at least 6 characters", comment: "Sign up password too short")
         case .passwordMismatch:
@@ -36,6 +39,10 @@ final class SignUpViewModel {
         let password = password ?? ""
         let confirmPassword = confirmPassword ?? ""
 
+        guard Self.isValidEmail(trimmedEmail) else {
+            return .failure(.invalidEmail)
+        }
+
         guard password.count >= 6 else {
             return .failure(.passwordTooShort)
         }
@@ -45,6 +52,11 @@ final class SignUpViewModel {
         }
 
         return .success(SignUpRegistrationDraft(email: trimmedEmail, passwordHash: Self.hash(password)))
+    }
+
+    private static func isValidEmail(_ email: String) -> Bool {
+        let pattern = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
+        return email.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     private static func hash(_ password: String) -> String {

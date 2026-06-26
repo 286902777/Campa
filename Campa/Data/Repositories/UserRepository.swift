@@ -76,6 +76,169 @@ final class UserRepository {
         }
     }
 
+    func fetchUser(id: UUID) -> Result<User, PersistenceError> {
+        let request = User.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+
+        do {
+            guard let user = try context.fetch(request).first else {
+                return .failure(.missingCurrentUser)
+            }
+            return .success(user)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func login(email: String, passwordHash: String) -> Result<User, PersistenceError> {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty, !passwordHash.isEmpty else {
+            return .failure(.missingCurrentUser)
+        }
+
+        let request = User.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(
+            format: "email == %@ AND passwordHash == %@",
+            trimmedEmail,
+            passwordHash
+        )
+
+        do {
+            guard let user = try context.fetch(request).first else {
+                return .failure(.missingCurrentUser)
+            }
+
+            clearCurrentUserFlag()
+            user.isCurrentUser = true
+            user.updatedAt = Date()
+            try context.save()
+            return .success(user)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func deleteUser(email: String) -> Result<Void, PersistenceError> {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty else {
+            return .failure(.missingCurrentUser)
+        }
+
+        let request = User.fetchRequest()
+        request.predicate = NSPredicate(format: "email == %@", trimmedEmail)
+
+        do {
+            let users = try context.fetch(request)
+            guard !users.isEmpty else {
+                return .failure(.missingCurrentUser)
+            }
+
+            users.forEach { context.delete($0) }
+            try context.save()
+            return .success(())
+        } catch {
+            context.rollback()
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func updateUser(id: UUID, nickname: String, avatarLocalPath: String?) -> Result<User, PersistenceError> {
+        let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedNickname.isEmpty else {
+            return .failure(.invalidTitle)
+        }
+
+        switch fetchUser(id: id) {
+        case .success(let user):
+            user.nickname = trimmedNickname
+            user.avatarLocalPath = avatarLocalPath
+            user.updatedAt = Date()
+            return saveAndReturn(user)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
+    func updatePassword(email: String, passwordHash: String) -> Result<User, PersistenceError> {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty, !passwordHash.isEmpty else {
+            return .failure(.missingCurrentUser)
+        }
+
+        let request = User.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "email == %@", trimmedEmail)
+
+        do {
+            guard let user = try context.fetch(request).first else {
+                return .failure(.missingCurrentUser)
+            }
+
+            user.passwordHash = passwordHash
+            user.updatedAt = Date()
+            return saveAndReturn(user)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func fetchFollowingUsers(for user: User) -> Result<[User], PersistenceError> {
+        let request = UserRelation.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "sourceUser == %@ AND type == %@",
+            user,
+            UserRelationType.follow.rawValue
+        )
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "createdAt", ascending: false)
+        ]
+
+        do {
+            let relations = try context.fetch(request)
+            let users = relations.compactMap { $0.targetUser }
+            return .success(users)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func countFollowingUsers(for user: User) -> Result<Int, PersistenceError> {
+        let request = UserRelation.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "sourceUser == %@ AND type == %@",
+            user,
+            UserRelationType.follow.rawValue
+        )
+
+        do {
+            return .success(try context.count(for: request))
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func fetchBlockedUsers(for user: User) -> Result<[User], PersistenceError> {
+        let request = UserRelation.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "sourceUser == %@ AND type == %@",
+            user,
+            UserRelationType.block.rawValue
+        )
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "createdAt", ascending: false)
+        ]
+
+        do {
+            let relations = try context.fetch(request)
+            let users = relations.compactMap { $0.targetUser }
+            return .success(users)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
     func addRelation(from sourceUser: User, to targetUser: User, type: UserRelationType) -> Result<UserRelation, PersistenceError> {
         if case .success(true) = hasRelation(from: sourceUser, to: targetUser, type: type) {
             return .failure(.duplicateRelation)

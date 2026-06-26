@@ -61,7 +61,26 @@ final class ChatRepository {
         ]
 
         do {
-            return .success(try context.fetch(request))
+            let conversations = try context.fetch(request).sorted {
+                ($0.lastMessageAt ?? $0.createdAt) > ($1.lastMessageAt ?? $1.createdAt)
+            }
+            return .success(conversations)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func fetchPrivateConversation(between currentUser: User, and receiver: User) -> Result<ChatConversation?, PersistenceError> {
+        let request = ChatConversation.fetchRequest()
+        request.predicate = NSPredicate(format: "type == %@", ChatConversationType.private.rawValue)
+
+        do {
+            let conversations = try context.fetch(request)
+            let conversation = conversations.first { conversation in
+                let participantIds = Set(conversation.participants?.compactMap(\.user?.id) ?? [])
+                return participantIds.contains(currentUser.id) && participantIds.contains(receiver.id)
+            }
+            return .success(conversation)
         } catch {
             return .failure(.coreDataSaveFailed)
         }

@@ -8,23 +8,54 @@ final class MessagesViewController: BaseViewController {
         static let inputVerticalInset: CGFloat = 8
         static let maxInputLines: CGFloat = 4
         static let inputBottomInset: CGFloat = 34
-        static let keyboardInputSpacing: CGFloat = 12
         static let estimatedRowHeight: CGFloat = 115
         static let rowSpacing: CGFloat = 18
     }
 
     private let viewModel: MessagesViewModel
+    private let chatRepository: ChatRepository
+    private let userRepository: UserRepository
+    private let receiverUserId: UUID?
+    private var conversation: ChatConversation?
+    private var messages: [MessageBubble] = []
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let inputContainerView = UIView()
     private let inputTextView = UITextView()
     private let inputPlaceholderLabel = UILabel()
     private let sendButton = UIButton(type: .custom)
     private var inputContainerHeightConstraint: NSLayoutConstraint?
-    private var inputContainerBottomConstraint: NSLayoutConstraint?
 
-    init(viewModel: MessagesViewModel = MessagesViewModel()) {
+    init(
+        conversation: ChatConversation? = nil,
+        receiverUserId: UUID? = nil,
+        viewModel: MessagesViewModel = MessagesViewModel(),
+        chatRepository: ChatRepository = ChatRepository(),
+        userRepository: UserRepository = UserRepository()
+    ) {
+        self.conversation = conversation
         self.viewModel = viewModel
+        self.chatRepository = chatRepository
+        self.userRepository = userRepository
+        self.receiverUserId = receiverUserId ?? Self.makeReceiverUserId(from: conversation, userRepository: userRepository)
         super.init(nibName: nil, bundle: nil)
+    }
+
+    private static func makeReceiverUserId(from conversation: ChatConversation?, userRepository: UserRepository) -> UUID? {
+        guard let conversation else {
+            return nil
+        }
+
+        let users = conversation.participants?.compactMap(\.user) ?? []
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let currentUserId = UUID(uuidString: userIdString) {
+            return users.first { $0.id != currentUserId }?.id
+        }
+
+        if case .success(let currentUser) = userRepository.fetchCurrentUser() {
+            return users.first { $0.id != currentUser.id }?.id
+        }
+
+        return users.first?.id
     }
 
     @available(*, unavailable)
@@ -35,15 +66,18 @@ final class MessagesViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        resolveConversationIfNeeded()
         configureView()
         configureMessages()
         configureInputBar()
         configureLayout()
-        configureKeyboardHandling()
+        loadMessages()
     }
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        loadMessages()
     }
 
     override func viewDidLayoutSubviews() {
@@ -53,15 +87,45 @@ final class MessagesViewController: BaseViewController {
 
     private func configureView() {
         self.changeNavbar(.all)
-        self.setTitleAndRight(title: "name", right: "more", rightSize: CGSize(width: 36, height: 36))
+        self.setTitleAndRight(title: makeTitleText(), right: "more", rightSize: CGSize(width: 36, height: 36))
     }
 
     override func rightAction() {
-        let vc = ReportViewController()
-        vc.clickBlock = {
-            
+        let vc = ReportAlertController()
+        vc.actionHandler = { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if result {
+                    self.blockReceiverUser()
+                } else {
+                    let reportVC = ReportViewController()
+                    self.navigationController?.pushViewController(reportVC, animated: true)
+                }
+            }
         }
-        self.navigationController?.pushViewController(vc, animated: true)
+        vc.modalPresentationStyle = .overFullScreen
+        self.present(vc, animated: false)
+    }
+
+    private func blockReceiverUser() {
+        guard  let currentUser = loadCurrentUser() else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+             return
+        }
+        guard let uid = self.receiverUserId,
+              case .success(let receiverUser) = userRepository.fetchUser(id: uid) else {
+             AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
+        case .success:
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
+        case .failure(.duplicateRelation):
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+        }
     }
     
     private func configureMessages() {
@@ -94,13 +158,14 @@ final class MessagesViewController: BaseViewController {
         inputTextView.iq.enableMode = .disabled
 
         inputPlaceholderLabel.translatesAutoresizingMaskIntoConstraints = false
-        inputPlaceholderLabel.text = "Say something...."
+        inputPlaceholderLabel.text = viewModel.inputPlaceholder
         inputPlaceholderLabel.font = AppFont.medium(size: 12)
         inputPlaceholderLabel.textColor = UIColor(red: 0.62, green: 0.56, blue: 0.52, alpha: 1.0)
 
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.setImage(UIImage(named: "send"), for: .normal)
         sendButton.accessibilityIdentifier = "messagesSendButton"
+        sendButton.addTarget(self, action: #selector(handleSendTapped), for: .touchUpInside)
 
         inputContainerView.addSubview(inputTextView)
         inputTextView.addSubview(inputPlaceholderLabel)
@@ -112,11 +177,6 @@ final class MessagesViewController: BaseViewController {
     private func configureLayout() {
         inputContainerHeightConstraint = inputContainerView.heightAnchor.constraint(equalToConstant: Constants.inputHeight)
         inputContainerHeightConstraint?.isActive = true
-        inputContainerBottomConstraint = inputContainerView.bottomAnchor.constraint(
-            equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-            constant: -Constants.inputBottomInset
-        )
-        inputContainerBottomConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 24),
@@ -126,6 +186,7 @@ final class MessagesViewController: BaseViewController {
 
             inputContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             inputContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            inputContainerView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -Constants.inputBottomInset),
 
             inputTextView.topAnchor.constraint(equalTo: inputContainerView.topAnchor, constant: Constants.inputVerticalInset),
             inputTextView.leadingAnchor.constraint(equalTo: inputContainerView.leadingAnchor, constant: 18),
@@ -141,21 +202,6 @@ final class MessagesViewController: BaseViewController {
             sendButton.widthAnchor.constraint(equalToConstant: 36),
             sendButton.heightAnchor.constraint(equalToConstant: 36)
         ])
-    }
-
-    private func configureKeyboardHandling() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleKeyboardFrameChanged(_:)),
-            name: UIResponder.keyboardWillChangeFrameNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleKeyboardFrameChanged(_:)),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
     }
 
     private func updatePlaceholderVisibility() {
@@ -186,27 +232,151 @@ final class MessagesViewController: BaseViewController {
         inputContainerHeightConstraint?.constant = containerHeight
     }
 
-    @objc private func handleKeyboardFrameChanged(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+    @objc private func handleSendTapped() {
+        let text = inputTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            return
+        }
+        guard let conversation else {
+            AppToast.show(message: NSLocalizedString("Conversation not found.", comment: "Missing conversation toast"), in: view)
+            return
+        }
+        guard let currentUser = loadCurrentUser() else {
+            AppToast.show(message: NSLocalizedString("User not found.", comment: "Missing user toast"), in: view)
             return
         }
 
-        let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
-        let keyboardOverlap = max(0, view.bounds.maxY - keyboardFrameInView.minY - view.safeAreaInsets.bottom)
-        let bottomInset = keyboardOverlap > 0
-            ? keyboardOverlap + Constants.keyboardInputSpacing
-            : Constants.inputBottomInset
-        inputContainerBottomConstraint?.constant = -bottomInset
-
-        let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0.25
-        let curveRawValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? 0
-        let options = UIView.AnimationOptions(rawValue: curveRawValue << 16)
-
-        UIView.animate(withDuration: duration, delay: 0, options: options) {
-            self.view.layoutIfNeeded()
-            self.tableView.scrollToRow(at: IndexPath(row: self.viewModel.messages.count > 0 ? (self.viewModel.messages.count - 1) : 0, section: 0), at: .none, animated: false)
+        switch chatRepository.insertTextMessage(text, from: currentUser, in: conversation) {
+        case .success:
+            inputTextView.text = ""
+            updatePlaceholderVisibility()
+            updateInputTextViewHeight()
+            loadMessages()
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to send message.", comment: "Send message failure toast"), in: view)
         }
+    }
+
+    private func loadMessages() {
+        guard let conversation,
+              let currentUser = loadCurrentUser(),
+              case .success(let chatMessages) = chatRepository.fetchMessages(in: conversation) else {
+            messages = []
+            tableView.reloadData()
+            return
+        }
+
+        let receiver = makeReceiverUser(from: conversation, currentUser: currentUser)
+        let currentUserAvatar = makeAvatarImage(from: currentUser.avatarLocalPath)
+        let receiverAvatar = makeAvatarImage(from: receiver?.avatarLocalPath)
+        messages = chatMessages.map { message in
+            let isOutgoing = message.sender?.id == currentUser.id
+            return MessageBubble(
+                text: message.content ?? "",
+                isOutgoing: isOutgoing,
+                avatarImage: isOutgoing ? currentUserAvatar : receiverAvatar
+            )
+        }
+        tableView.reloadData()
+        scrollToBottom(animated: false)
+    }
+
+    private func loadCurrentUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId) {
+            return user
+        }
+
+        guard case .success(let user) = userRepository.fetchCurrentUser() else {
+            return nil
+        }
+        return user
+    }
+
+    private func makeReceiverUser(from conversation: ChatConversation, currentUser: User) -> User? {
+        conversation.participants?
+            .compactMap(\.user)
+            .first { $0.id != currentUser.id }
+    }
+
+    private func makeAvatarImage(from storedPath: String?) -> UIImage? {
+        guard let storedPath = cleanedText(storedPath) else {
+            return UIImage(named: "user_icon")
+        }
+
+        let avatarURL: URL?
+        if storedPath.hasPrefix("/") {
+            avatarURL = URL(fileURLWithPath: storedPath)
+        } else {
+            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Avatars", isDirectory: true)
+                .appendingPathComponent(storedPath)
+        }
+
+        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: "user_icon")
+    }
+
+    private func resolveConversationIfNeeded() {
+        guard conversation == nil,
+              let receiverUserId,
+              let currentUser = loadCurrentUser(),
+              case .success(let receiver) = userRepository.fetchUser(id: receiverUserId) else {
+            return
+        }
+
+        switch chatRepository.fetchPrivateConversation(between: currentUser, and: receiver) {
+        case .success(let existingConversation):
+            if let existingConversation {
+                conversation = existingConversation
+                return
+            }
+            if case .success(let newConversation) = chatRepository.createConversation(
+                type: .private,
+                title: nil,
+                participants: [currentUser, receiver]
+            ) {
+                conversation = newConversation
+            }
+        case .failure:
+            return
+        }
+    }
+
+    private func makeTitleText() -> String {
+        guard let conversation else {
+            if let receiverUserId,
+               case .success(let receiver) = userRepository.fetchUser(id: receiverUserId) {
+                return receiver.nickname
+            }
+            return viewModel.title
+        }
+
+        if let title = cleanedText(conversation.title) {
+            return title
+        }
+
+        let currentUserId = UserDefaults.standard.string(forKey: CurrentUserIdKey).flatMap { UUID(uuidString: $0) }
+        let users = conversation.participants?.compactMap(\.user) ?? []
+        if let currentUserId,
+           let otherUser = users.first(where: { $0.id != currentUserId }) {
+            return otherUser.nickname
+        }
+        return users.first?.nickname ?? viewModel.title
+    }
+
+    private func scrollToBottom(animated: Bool) {
+        guard !messages.isEmpty else {
+            return
+        }
+
+        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        tableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
+    }
+
+    private func cleanedText(_ text: String?) -> String? {
+        let value = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
     }
 }
 
@@ -219,7 +389,7 @@ extension MessagesViewController: UITextViewDelegate {
 
 extension MessagesViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.messages.count
+        messages.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -230,7 +400,7 @@ extension MessagesViewController: UITableViewDataSource {
             return UITableViewCell()
         }
 
-        cell.configure(message: viewModel.messages[indexPath.row])
+        cell.configure(message: messages[indexPath.row])
         return cell
     }
 }
@@ -294,6 +464,7 @@ private final class MessageBubbleView: UIView {
     }
 
     func configure(message: MessageBubble) {
+        avatarImageView.image = message.avatarImage ?? UIImage(named: "user_icon")
         bubbleLabel.text = message.text
         bubbleContainerView.backgroundColor = message.isOutgoing
             ? UIColor(red: 0.87, green: 0.92, blue: 0.09, alpha: 1.0)

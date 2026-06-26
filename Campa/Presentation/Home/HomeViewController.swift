@@ -20,13 +20,21 @@ final class HomeViewController: BaseViewController {
     private let segmentStackView = UIStackView()
     private let pageContainerView = UIView()
     private let pageViewController: UIPageViewController
+    private let userRepository: UserRepository
+    private let postRepository: PostRepository
 
     private var segmentButtons: [UIButton] = []
     private var pageControllers: [HomePostsPageViewController] = []
     private var selectedIndex = 0
 
-    init(viewModel: HomeViewModel = HomeViewModel()) {
+    init(
+        viewModel: HomeViewModel = HomeViewModel(),
+        userRepository: UserRepository = UserRepository(),
+        postRepository: PostRepository = PostRepository()
+    ) {
         self.viewModel = viewModel
+        self.userRepository = userRepository
+        self.postRepository = postRepository
         self.pageViewController = UIPageViewController(
             transitionStyle: .scroll,
             navigationOrientation: .horizontal,
@@ -40,20 +48,35 @@ final class HomeViewController: BaseViewController {
         nil
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         configureBase()
+        configureNotifications()
         configureHeader()
         configureSearch()
         configureSegment()
         configurePages()
         configureLayout()
+        loadPosts()
     }
 
     private func configureBase() {
         view.backgroundColor = Constants.backgroundColor
         navBar.backgroundColor = .clear
+    }
+
+    private func configureNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePostDidPublish),
+            name: .postDidPublish,
+            object: nil
+        )
     }
 
     private func configureHeader() {
@@ -130,6 +153,9 @@ final class HomeViewController: BaseViewController {
             let viewController = HomePostsPageViewController(posts: posts)
             viewController.onMoreTapped = { [weak self] in
                 self?.showReport()
+            }
+            viewController.onPostSelected = { [weak self] homePost in
+                self?.showPostDetail(homePost)
             }
             return viewController
         }
@@ -224,6 +250,117 @@ final class HomeViewController: BaseViewController {
         viewController.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(viewController, animated: true)
     }
+
+    private func showPostDetail(_ homePost: HomePost) {
+        guard let sourcePost = homePost.sourcePost else {
+            return
+        }
+
+        let viewController = PostDetailViewController(post: sourcePost, homePost: homePost)
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    private func loadPosts() {
+        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+              let userId = UUID(uuidString: userIdString),
+              case .success(let currentUser) = userRepository.fetchUser(id: userId),
+              case .success(let posts) = postRepository.fetchHomeFeed(for: currentUser) else {
+            return
+        }
+
+        let homePosts = posts.enumerated().map { index, post in
+            makeHomePost(from: post, index: index)
+        }
+
+        pageControllers.forEach { controller in
+            controller.updatePosts(homePosts)
+        }
+    }
+
+    @objc private func handlePostDidPublish() {
+        loadPosts()
+    }
+
+    private func makeHomePost(from post: Post, index: Int) -> HomePost {
+        let images = makePostImages(for: post)
+        let author = post.author
+        let usePurpleStyle = index.isMultiple(of: 2)
+        let primaryTextColor = usePurpleStyle ? UIColor.white : Constants.darkTextColor
+        let secondaryTextColor = usePurpleStyle ? UIColor.white.withAlphaComponent(0.78) : Constants.mutedTextColor
+
+        return HomePost(
+            sourcePost: post,
+            author: cleanedText(author?.nickname) ?? NSLocalizedString("Unknown", comment: "Unknown post author"),
+            school: cleanedText(author?.school) ?? cleanedText(post.addressText) ?? NSLocalizedString("Campus", comment: "Fallback school"),
+            time: makeRelativeTime(from: post.createdAt),
+            body: post.content,
+            avatarImage: makeAvatarImage(from: author?.avatarLocalPath),
+            heroImage: images.first,
+            thumbnailImages: images,
+            isHot: index.isMultiple(of: 3),
+            backgroundColor: usePurpleStyle ? Constants.purpleColor : Constants.limeColor,
+            primaryTextColor: primaryTextColor,
+            secondaryTextColor: secondaryTextColor
+        )
+    }
+
+    private func makePostImages(for post: Post) -> [UIImage] {
+        guard case .success(let postImages) = postRepository.fetchImages(for: post) else {
+            return []
+        }
+
+        return postImages.compactMap { image in
+            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) }
+        }
+    }
+
+    private func postImageURL(for storedPath: String) -> URL? {
+        let value = storedPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else {
+            return nil
+        }
+
+        if value.hasPrefix("/") {
+            return URL(fileURLWithPath: value)
+        }
+
+        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        return documentsURL
+            .appendingPathComponent("PostImages", isDirectory: true)
+            .appendingPathComponent(value)
+    }
+
+    private func makeAvatarImage(from storedPath: String?) -> UIImage? {
+        guard let storedPath = cleanedText(storedPath) else {
+            return UIImage(named: "user_icon")
+        }
+
+        let avatarURL: URL?
+        if storedPath.hasPrefix("/") {
+            avatarURL = URL(fileURLWithPath: storedPath)
+        } else {
+            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Avatars", isDirectory: true)
+                .appendingPathComponent(storedPath)
+        }
+
+        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: "user_icon")
+    }
+
+    private func makeRelativeTime(from date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func cleanedText(_ text: String?) -> String? {
+        let value = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
+    }
 }
 
 extension HomeViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
@@ -264,9 +401,10 @@ extension HomeViewController: UIPageViewControllerDataSource, UIPageViewControll
 }
 
 private final class HomePostsPageViewController: UIViewController {
-    private let posts: [HomePost]
+    private var posts: [HomePost]
     private let tableView = UITableView(frame: .zero, style: .plain)
     var onMoreTapped: (() -> Void)?
+    var onPostSelected: ((HomePost) -> Void)?
 
     init(posts: [HomePost]) {
         self.posts = posts
@@ -292,10 +430,11 @@ private final class HomePostsPageViewController: UIViewController {
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
-        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 68, right: 0)
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 300
         tableView.dataSource = self
+        tableView.delegate = self
         tableView.register(HomePostTableViewCell.self, forCellReuseIdentifier: HomePostTableViewCell.reuseIdentifier)
         view.addSubview(tableView)
     }
@@ -313,9 +452,15 @@ private final class HomePostsPageViewController: UIViewController {
         tableView.backgroundView = posts.isEmpty ? EmptyView(frame: tableView.bounds) : nil
         tableView.isScrollEnabled = !posts.isEmpty
     }
+
+    func updatePosts(_ posts: [HomePost]) {
+        self.posts = posts
+        tableView.reloadData()
+        updateEmptyState()
+    }
 }
 
-extension HomePostsPageViewController: UITableViewDataSource {
+extension HomePostsPageViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         posts.count
     }
@@ -333,6 +478,13 @@ extension HomePostsPageViewController: UITableViewDataSource {
         }
         return cell
     }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        guard posts.indices.contains(indexPath.row) else {
+            return
+        }
+        onPostSelected?(posts[indexPath.row])
+    }
 }
 
 private final class HomePostTableViewCell: UITableViewCell {
@@ -347,6 +499,12 @@ private final class HomePostTableViewCell: UITableViewCell {
     private let heroImageView = UIImageView()
     private let thumbnailsStackView = UIStackView()
     private let hotImageView = UIImageView()
+    private var compactHeroHeightConstraint: NSLayoutConstraint?
+    private var expandedHeroHeightConstraint: NSLayoutConstraint?
+    private var thumbnailsTopConstraint: NSLayoutConstraint?
+    private var thumbnailsHeightConstraint: NSLayoutConstraint?
+    private var thumbnailsBottomConstraint: NSLayoutConstraint?
+    private var heroBottomConstraint: NSLayoutConstraint?
     var onMoreTapped: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -367,22 +525,56 @@ private final class HomePostTableViewCell: UITableViewCell {
             thumbnailsStackView.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
+        thumbnailsStackView.isHidden = false
+        deactivateImageLayoutConstraints()
+        expandedHeroHeightConstraint?.isActive = false
+        compactHeroHeightConstraint?.isActive = true
+        thumbnailsTopConstraint?.isActive = true
+        thumbnailsHeightConstraint?.isActive = true
+        thumbnailsBottomConstraint?.isActive = true
         onMoreTapped = nil
     }
 
     func configure(post: HomePost) {
         cardView.backgroundColor = post.backgroundColor
-        avatarImageView.image = UIImage(named: post.avatarImageName)
+        avatarImageView.image = post.avatarImage ?? UIImage(named: "user_icon")
         authorLabel.text = post.author
         authorLabel.textColor = post.primaryTextColor
         metaLabel.text = "\(post.school)  -  \(post.time)"
         metaLabel.textColor = post.secondaryTextColor
         bodyLabel.text = post.body
         bodyLabel.textColor = post.primaryTextColor
-        heroImageView.image = UIImage(named: post.heroImageName)
+        heroImageView.image = post.heroImage ?? UIImage(named: "photo")
         hotImageView.isHidden = !post.isHot
 
-        post.thumbnailImageNames.map(makeThumbnailImageView(imageName:)).forEach(thumbnailsStackView.addArrangedSubview)
+        let shouldExpandHero = post.thumbnailImages.count <= 1
+        thumbnailsStackView.isHidden = shouldExpandHero
+        updateImageLayout(expandsHero: shouldExpandHero)
+
+        guard !shouldExpandHero else {
+            return
+        }
+
+        post.thumbnailImages.map(makeThumbnailImageView(image:)).forEach(thumbnailsStackView.addArrangedSubview)
+    }
+
+    private func updateImageLayout(expandsHero: Bool) {
+        deactivateImageLayoutConstraints()
+        compactHeroHeightConstraint?.isActive = !expandsHero
+        expandedHeroHeightConstraint?.isActive = expandsHero
+        thumbnailsTopConstraint?.isActive = !expandsHero
+        thumbnailsHeightConstraint?.isActive = !expandsHero
+        thumbnailsBottomConstraint?.isActive = !expandsHero
+        heroBottomConstraint?.isActive = expandsHero
+    }
+
+    private func deactivateImageLayoutConstraints() {
+        compactHeroHeightConstraint?.isActive = false
+        expandedHeroHeightConstraint?.isActive = false
+        thumbnailsTopConstraint?.isActive = false
+        thumbnailsHeightConstraint?.isActive = false
+        thumbnailsBottomConstraint?.isActive = false
+        heroBottomConstraint?.isActive = false
     }
 
     private func configureViews() {
@@ -442,6 +634,18 @@ private final class HomePostTableViewCell: UITableViewCell {
     }
 
     private func configureLayout() {
+        compactHeroHeightConstraint = heroImageView.heightAnchor.constraint(equalTo: heroImageView.widthAnchor, multiplier: 0.48)
+        expandedHeroHeightConstraint = heroImageView.heightAnchor.constraint(equalTo: heroImageView.widthAnchor, multiplier: 0.48, constant: 62)
+        thumbnailsTopConstraint = thumbnailsStackView.topAnchor.constraint(equalTo: heroImageView.bottomAnchor, constant: 4)
+        thumbnailsHeightConstraint = thumbnailsStackView.heightAnchor.constraint(equalToConstant: 58)
+        thumbnailsBottomConstraint = thumbnailsStackView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
+        heroBottomConstraint = heroImageView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
+
+        compactHeroHeightConstraint?.isActive = true
+        thumbnailsTopConstraint?.isActive = true
+        thumbnailsHeightConstraint?.isActive = true
+        thumbnailsBottomConstraint?.isActive = true
+
         NSLayoutConstraint.activate([
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: HomeViewController.Constants.horizontalInset),
@@ -473,24 +677,20 @@ private final class HomePostTableViewCell: UITableViewCell {
             heroImageView.topAnchor.constraint(equalTo: bodyLabel.bottomAnchor, constant: 10),
             heroImageView.leadingAnchor.constraint(equalTo: bodyLabel.leadingAnchor),
             heroImageView.trailingAnchor.constraint(equalTo: bodyLabel.trailingAnchor),
-            heroImageView.heightAnchor.constraint(equalTo: heroImageView.widthAnchor, multiplier: 0.48),
 
-            thumbnailsStackView.topAnchor.constraint(equalTo: heroImageView.bottomAnchor, constant: 4),
             thumbnailsStackView.leadingAnchor.constraint(equalTo: heroImageView.leadingAnchor),
             thumbnailsStackView.trailingAnchor.constraint(equalTo: heroImageView.trailingAnchor),
-            thumbnailsStackView.heightAnchor.constraint(equalToConstant: 58),
-            thumbnailsStackView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
 
             hotImageView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -2),
             hotImageView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -4),
-            hotImageView.widthAnchor.constraint(equalToConstant: 48),
-            hotImageView.heightAnchor.constraint(equalToConstant: 24)
+            hotImageView.widthAnchor.constraint(equalToConstant: 66),
+            hotImageView.heightAnchor.constraint(equalToConstant: 66)
         ])
     }
 
-    private func makeThumbnailImageView(imageName: String) -> UIImageView {
+    private func makeThumbnailImageView(image: UIImage) -> UIImageView {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: imageName)
+        imageView.image = image
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         return imageView

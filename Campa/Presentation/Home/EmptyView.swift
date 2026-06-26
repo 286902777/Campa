@@ -41,7 +41,8 @@ class EmptyView: UIView {
     private func setupSubViews() {
         addSubview(imageView)
         imageView.snp.makeConstraints { (make) in
-            make.center.equalToSuperview()
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(-40)
         }
         addSubview(titleLbl)
         titleLbl.text = "There is currently no content here."

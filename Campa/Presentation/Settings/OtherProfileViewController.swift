@@ -1,7 +1,7 @@
 import SnapKit
 import UIKit
 
-final class ProfileViewController: BaseViewController {
+final class OtherProfileViewController: BaseViewController {
     private enum Constants {
         static let backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
         static let purpleColor = UIColor(red: 0.69, green: 0.59, blue: 0.96, alpha: 1.0)
@@ -9,9 +9,11 @@ final class ProfileViewController: BaseViewController {
         static let mutedTextColor = UIColor(red: 0.42, green: 0.36, blue: 0.32, alpha: 1.0)
     }
 
+    private let userId: UUID
     private let viewModel: ProfileViewModel
     private let userRepository: UserRepository
     private let postRepository: PostRepository
+
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let headerImageView = UIImageView()
@@ -19,11 +21,12 @@ final class ProfileViewController: BaseViewController {
     private let avatarImageView = UIImageView()
     private let nameLabel = UILabel()
     private let schoolLabel = UILabel()
+    private let actionStackView = UIStackView()
+    private let chatButton = UIButton(type: .custom)
+    private let followButton = UIButton(type: .custom)
     private let locationIconView = UIImageView()
     private let locationLabel = UILabel()
     private let statsStackView = UIStackView()
-    private let followingCountLabel = UILabel()
-    private let postsCountLabel = UILabel()
     private let postCardView = UIView()
     private let postAvatarImageView = UIImageView()
     private let postNameLabel = UILabel()
@@ -38,10 +41,12 @@ final class ProfileViewController: BaseViewController {
     private var heroBottomConstraint: Constraint?
 
     init(
+        userId: UUID,
         viewModel: ProfileViewModel = ProfileViewModel(),
         userRepository: UserRepository = UserRepository(),
         postRepository: PostRepository = PostRepository()
     ) {
+        self.userId = userId
         self.viewModel = viewModel
         self.userRepository = userRepository
         self.postRepository = postRepository
@@ -55,99 +60,93 @@ final class ProfileViewController: BaseViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         configure()
         configureHeader()
         configureProfilePanel()
         configurePostCard()
         configureLayout()
+        loadUserProfile()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        loadCurrentUserProfile()
-    }
-
-    override func rightAction() {
-        let vc = SettingsViewController()
-        vc.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(vc, animated: true)
-    }
-    
     private func configure() {
         view.backgroundColor = Constants.backgroundColor
-        self.navType = .titleRightBtn
-        self.setTitleAndRight(title: nil, right: "set", rightSize: CGSize(width: 30, height: 30))
+        changeNavbar(.back)
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.showsVerticalScrollIndicator = false
         scrollView.alwaysBounceVertical = true
     }
 
     private func configureHeader() {
-        headerImageView.translatesAutoresizingMaskIntoConstraints = false
         headerImageView.contentMode = .scaleAspectFill
         headerImageView.clipsToBounds = true
     }
 
     private func configureProfilePanel() {
-        profilePanelView.translatesAutoresizingMaskIntoConstraints = false
         profilePanelView.backgroundColor = Constants.backgroundColor
         profilePanelView.layer.cornerRadius = 34
         profilePanelView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
-        avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         avatarImageView.image = UIImage(named: "user_icon")
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.layer.cornerRadius = 46
         avatarImageView.clipsToBounds = true
         avatarImageView.backgroundColor = .white
-        
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
+
         nameLabel.text = viewModel.name
         nameLabel.font = AppFont.bold(size: 26)
         nameLabel.textColor = Constants.darkTextColor
 
-        schoolLabel.translatesAutoresizingMaskIntoConstraints = false
         schoolLabel.text = viewModel.school
         schoolLabel.font = AppFont.semibold(size: 20)
         schoolLabel.textColor = Constants.mutedTextColor
-        schoolLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        locationIconView.translatesAutoresizingMaskIntoConstraints = false
+        configureActionButton(chatButton, title: "Chat", image: UIImage(named: "chat") ?? UIImage(systemName: "message.fill"), tintColor: UIColor(red: 0.08, green: 0.80, blue: 0.34, alpha: 1.0))
+        chatButton.addTarget(self, action: #selector(handleChatTapped), for: .touchUpInside)
+        configureActionButton(followButton, title: "Follow", image: UIImage(named: "arrow"), tintColor: Constants.darkTextColor)
+        followButton.addTarget(self, action: #selector(handleFollowTapped), for: .touchUpInside)
+
+        actionStackView.axis = .horizontal
+        actionStackView.alignment = .fill
+        actionStackView.distribution = .fillEqually
+        actionStackView.spacing = 28
+
         locationIconView.image = UIImage(named: "location")
         locationIconView.contentMode = .scaleAspectFit
         locationIconView.tintColor = Constants.mutedTextColor
 
-        locationLabel.translatesAutoresizingMaskIntoConstraints = false
         locationLabel.text = viewModel.location
         locationLabel.font = AppFont.medium(size: 14)
         locationLabel.textColor = Constants.mutedTextColor
-        locationLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        statsStackView.translatesAutoresizingMaskIntoConstraints = false
         statsStackView.axis = .horizontal
         statsStackView.alignment = .center
         statsStackView.distribution = .fillEqually
         statsStackView.spacing = 24
-
         [
-            makeStatView(
-                countLabel: followingCountLabel,
-                count: viewModel.followingCount,
-                title: viewModel.followingTitle,
-                action: #selector(handleFollowingTapped)
-            ),
-            makeStatView(countLabel: postsCountLabel, count: viewModel.postsCount, title: viewModel.postsTitle)
+            makeStatView(count: viewModel.followingCount, title: viewModel.followingTitle),
+            makeStatView(count: viewModel.followersCount, title: viewModel.followersTitle),
+            makeStatView(count: viewModel.postsCount, title: viewModel.postsTitle)
         ].forEach(statsStackView.addArrangedSubview)
     }
 
+    private func configureActionButton(_ button: UIButton, title: String, image: UIImage?, tintColor: UIColor) {
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 18
+        button.tintColor = tintColor
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(Constants.darkTextColor, for: .normal)
+        button.setImage(image, for: .normal)
+        button.titleLabel?.font = AppFont.semibold(size: 14)
+        button.semanticContentAttribute = .forceLeftToRight
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -6, bottom: 0, right: 6)
+    }
+
     private func configurePostCard() {
-        postCardView.translatesAutoresizingMaskIntoConstraints = false
         postCardView.backgroundColor = Constants.purpleColor
         postCardView.layer.cornerRadius = 24
         postCardView.clipsToBounds = true
 
-        postAvatarImageView.translatesAutoresizingMaskIntoConstraints = false
         postAvatarImageView.image = UIImage(named: "user_icon")
         postAvatarImageView.backgroundColor = .white
         postAvatarImageView.contentMode = .scaleAspectFill
@@ -156,123 +155,91 @@ final class ProfileViewController: BaseViewController {
         postAvatarImageView.layer.borderWidth = 2
         postAvatarImageView.clipsToBounds = true
 
-        postNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        postNameLabel.text = viewModel.postAuthor
         postNameLabel.font = AppFont.semibold(size: 20)
         postNameLabel.textColor = .white
 
-        postMetaLabel.translatesAutoresizingMaskIntoConstraints = false
-        postMetaLabel.text = "\(viewModel.postSchool)  •  \(viewModel.postTime)"
         postMetaLabel.font = AppFont.medium(size: 12)
         postMetaLabel.textColor = UIColor.white.withAlphaComponent(0.82)
 
-        postBodyLabel.translatesAutoresizingMaskIntoConstraints = false
-        postBodyLabel.text = viewModel.postText
         postBodyLabel.font = AppFont.medium(size: 14)
         postBodyLabel.textColor = .white
         postBodyLabel.numberOfLines = 0
 
-        postHeroImageView.translatesAutoresizingMaskIntoConstraints = false
         postHeroImageView.contentMode = .scaleAspectFill
         postHeroImageView.clipsToBounds = true
         postHeroImageView.layer.cornerRadius = 8
-        postHeroImageView.backgroundColor = .blue
-        thumbnailStackView.translatesAutoresizingMaskIntoConstraints = false
+
         thumbnailStackView.axis = .horizontal
         thumbnailStackView.distribution = .fillEqually
         thumbnailStackView.spacing = 4
-
-        [
-            UIColor(red: 0.70, green: 0.80, blue: 0.76, alpha: 1.0),
-            UIColor(red: 0.78, green: 0.84, blue: 0.85, alpha: 1.0),
-            UIColor(red: 0.58, green: 0.70, blue: 0.44, alpha: 1.0)
-        ].map(makeThumbnailView(color:)).forEach(thumbnailStackView.addArrangedSubview)
     }
 
     private func configureLayout() {
-        view.addSubview(headerImageView)
-        view.addSubview(profilePanelView)
-        view.addSubview(avatarImageView)
-        profilePanelView.addSubview(statsStackView)
-        profilePanelView.addSubview(nameLabel)
-        profilePanelView.addSubview(schoolLabel)
-        profilePanelView.addSubview(locationIconView)
-        profilePanelView.addSubview(locationLabel)
-        view.addSubview(scrollView)
+        [headerImageView, profilePanelView, avatarImageView, scrollView].forEach(view.addSubview)
+        [statsStackView, nameLabel, schoolLabel, actionStackView, locationIconView, locationLabel].forEach(profilePanelView.addSubview)
+        [chatButton, followButton].forEach(actionStackView.addArrangedSubview)
         scrollView.addSubview(contentView)
         contentView.addSubview(postCardView)
         contentView.addSubview(emptyView)
-        postCardView.addSubview(postAvatarImageView)
-        postCardView.addSubview(postNameLabel)
-        postCardView.addSubview(postMetaLabel)
-        postCardView.addSubview(postBodyLabel)
-        postCardView.addSubview(postHeroImageView)
-        postCardView.addSubview(thumbnailStackView)
+        [postAvatarImageView, postNameLabel, postMetaLabel, postBodyLabel, postHeroImageView, thumbnailStackView].forEach(postCardView.addSubview)
         view.bringSubviewToFront(navBar)
 
         headerImageView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
             make.height.equalTo(view.snp.height).multipliedBy(0.36)
         }
-
         profilePanelView.snp.makeConstraints { make in
             make.top.equalTo(headerImageView.snp.bottom).offset(-42)
             make.leading.trailing.bottom.equalToSuperview()
         }
-
         avatarImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(62)
             make.centerY.equalTo(profilePanelView.snp.top).offset(-16)
             make.size.equalTo(92)
         }
-
-        scrollView.snp.makeConstraints { make in
-            make.top.equalTo(locationLabel.snp.bottom).offset(34)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
-        contentView.snp.makeConstraints { make in
-            make.edges.equalTo(scrollView.contentLayoutGuide)
-            make.width.equalTo(scrollView.frameLayoutGuide)
-        }
-
         statsStackView.snp.makeConstraints { make in
             make.top.equalTo(profilePanelView.snp.top).offset(16)
             make.leading.equalTo(avatarImageView.snp.trailing).offset(24)
             make.trailing.equalTo(profilePanelView.snp.trailing).inset(26)
             make.height.equalTo(54)
         }
-
         nameLabel.snp.makeConstraints { make in
             make.top.equalTo(avatarImageView.snp.bottom).offset(16)
             make.leading.equalTo(profilePanelView.snp.leading).offset(25)
-            make.trailing.lessThanOrEqualTo(statsStackView.snp.leading).offset(-16)
+            make.trailing.greaterThanOrEqualTo(statsStackView.snp.leading).inset(25)
         }
-
         schoolLabel.snp.makeConstraints { make in
             make.top.equalTo(nameLabel.snp.bottom).offset(8)
             make.leading.equalTo(nameLabel.snp.leading)
-            make.trailing.lessThanOrEqualTo(locationIconView.snp.leading).offset(-12)
         }
-
+        actionStackView.snp.makeConstraints { make in
+            make.top.equalTo(schoolLabel.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview().inset(47)
+            make.height.equalTo(36)
+        }
         locationIconView.snp.makeConstraints { make in
-            make.leading.equalTo(schoolLabel.snp.trailing).offset(12)
-            make.centerY.equalTo(schoolLabel.snp.centerY)
+            make.leading.equalTo(schoolLabel.snp.leading)
+            make.top.equalTo(actionStackView.snp.bottom).offset(14)
             make.size.equalTo(18)
         }
-
         locationLabel.snp.makeConstraints { make in
             make.leading.equalTo(locationIconView.snp.trailing).offset(6)
-            make.centerY.equalTo(schoolLabel.snp.centerY)
+            make.centerY.equalTo(locationIconView.snp.centerY)
             make.trailing.lessThanOrEqualTo(profilePanelView.snp.trailing).inset(26)
         }
-
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(locationLabel.snp.bottom).offset(26)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+        contentView.snp.makeConstraints { make in
+            make.edges.equalTo(scrollView.contentLayoutGuide)
+            make.width.equalTo(scrollView.frameLayoutGuide)
+        }
         postCardView.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(30)
             postCardBottomConstraint = make.bottom.equalToSuperview().inset(108).constraint
         }
-
         emptyView.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(30)
@@ -280,126 +247,50 @@ final class ProfileViewController: BaseViewController {
             emptyBottomConstraint = make.bottom.equalToSuperview().inset(108).constraint
         }
         emptyBottomConstraint?.deactivate()
-
         postAvatarImageView.snp.makeConstraints { make in
             make.top.leading.equalToSuperview().offset(22)
             make.size.equalTo(54)
         }
-
         postNameLabel.snp.makeConstraints { make in
             make.top.equalTo(postAvatarImageView.snp.top).offset(2)
             make.leading.equalTo(postAvatarImageView.snp.trailing).offset(14)
             make.trailing.lessThanOrEqualToSuperview().inset(18)
         }
-
         postMetaLabel.snp.makeConstraints { make in
             make.top.equalTo(postNameLabel.snp.bottom).offset(4)
             make.leading.equalTo(postNameLabel.snp.leading)
             make.trailing.lessThanOrEqualToSuperview().inset(18)
         }
-
         postBodyLabel.snp.makeConstraints { make in
             make.top.equalTo(postAvatarImageView.snp.bottom).offset(20)
             make.leading.trailing.equalToSuperview().inset(22)
         }
-
         postHeroImageView.snp.makeConstraints { make in
             make.top.equalTo(postBodyLabel.snp.bottom).offset(18)
             make.leading.trailing.equalTo(postBodyLabel)
             make.height.equalTo(postHeroImageView.snp.width).multipliedBy(0.56)
         }
-
         thumbnailStackView.snp.makeConstraints { make in
-            make.top.equalTo(postHeroImageView.snp.bottom).offset(4).priority(.medium)
+            make.top.equalTo(postHeroImageView.snp.bottom).offset(4)
             make.leading.trailing.equalTo(postHeroImageView)
             make.height.equalTo(postHeroImageView.snp.height).multipliedBy(0.32)
             thumbnailBottomConstraint = make.bottom.equalToSuperview().inset(22).constraint
         }
-
         postHeroImageView.snp.makeConstraints { make in
             heroBottomConstraint = make.bottom.equalToSuperview().inset(22).constraint
         }
         heroBottomConstraint?.deactivate()
-
         emptyView.isHidden = true
     }
 
-    private func makeStatView(
-        countLabel: UILabel,
-        count: String,
-        title: String,
-        action: Selector? = nil
-    ) -> UIView {
-        let stackView = UIStackView()
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-        stackView.alignment = .center
-        stackView.spacing = 2
-
-        countLabel.text = count
-        countLabel.font = AppFont.semibold(size: 25)
-        countLabel.textColor = Constants.darkTextColor
-        countLabel.textAlignment = .center
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = AppFont.medium(size: 12)
-        titleLabel.textColor = Constants.darkTextColor
-        titleLabel.textAlignment = .center
-
-        stackView.addArrangedSubview(countLabel)
-        stackView.addArrangedSubview(titleLabel)
-
-        if let action {
-            let tapGesture = UITapGestureRecognizer(target: self, action: action)
-            stackView.addGestureRecognizer(tapGesture)
-            stackView.isUserInteractionEnabled = true
-        }
-
-        return stackView
-    }
-
-    @objc private func handleFollowingTapped() {
-        let vc = FollowViewController()
-        vc.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(vc, animated: true)
-    }
-
-    private func makeThumbnailView(color: UIColor) -> UIView {
-        let view = UIView()
-        view.backgroundColor = color
-        view.layer.cornerRadius = 4
-        view.clipsToBounds = true
-        return view
-    }
-
-    private func loadCurrentUserProfile() {
-        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
-              let userId = UUID(uuidString: userIdString),
-              case .success(let user) = userRepository.fetchUser(id: userId) else {
+    private func loadUserProfile() {
+        guard case .success(let user) = userRepository.fetchUser(id: userId) else {
+            showEmptyPost()
             return
         }
 
         apply(user: user)
-        loadStats(for: user)
         loadFirstPost(for: user)
-    }
-
-    private func loadStats(for user: User) {
-        if case .success(let followingCount) = userRepository.countFollowingUsers(for: user) {
-            viewModel.followingCount = "\(followingCount)"
-        } else {
-            viewModel.followingCount = "0"
-        }
-
-        if case .success(let postsCount) = postRepository.countPosts(for: user) {
-            viewModel.postsCount = "\(postsCount)"
-        } else {
-            viewModel.postsCount = "0"
-        }
-
-        followingCountLabel.text = viewModel.followingCount
-        postsCountLabel.text = viewModel.postsCount
     }
 
     private func apply(user: User) {
@@ -408,7 +299,7 @@ final class ProfileViewController: BaseViewController {
         locationLabel.text = user.location ?? viewModel.location
         postNameLabel.text = user.nickname
 
-        guard let avatarLocalPath = cleanedText(user.avatarLocalPath),
+        guard let avatarLocalPath = avatarPath(from: user.avatarLocalPath),
               let avatarImage = UIImage(contentsOfFile: avatarLocalPath) else {
             headerImageView.image = UIImage(named: "user_icon")
             avatarImageView.image = UIImage(named: "user_icon")
@@ -416,12 +307,7 @@ final class ProfileViewController: BaseViewController {
             return
         }
 
-        guard let localPath = cleanedText(user.avatarLocalPath),
-              let image = UIImage(contentsOfFile: localPath) else {
-            headerImageView.image = UIImage(named: "user_icon")
-            return
-        }
-        headerImageView.image = image
+        headerImageView.image = avatarImage
         avatarImageView.image = avatarImage
         postAvatarImageView.image = avatarImage
     }
@@ -444,12 +330,10 @@ final class ProfileViewController: BaseViewController {
 
         let images = makePostImages(for: post)
         postHeroImageView.image = images.first ?? UIImage(named: "photo")
-
         thumbnailStackView.arrangedSubviews.forEach { view in
             thumbnailStackView.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
-
         images.dropFirst().forEach { image in
             thumbnailStackView.addArrangedSubview(makeThumbnailImageView(image: image))
         }
@@ -490,27 +374,50 @@ final class ProfileViewController: BaseViewController {
 
     private func postImageURL(for storedPath: String) -> URL? {
         let value = storedPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else {
-            return nil
-        }
-
-        if value.hasPrefix("/") {
-            return URL(fileURLWithPath: value)
-        }
-
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-
-        return documentsURL
+        guard !value.isEmpty else { return nil }
+        if value.hasPrefix("/") { return URL(fileURLWithPath: value) }
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
             .appendingPathComponent("PostImages", isDirectory: true)
             .appendingPathComponent(value)
+    }
+
+    private func avatarPath(from storedPath: String?) -> String? {
+        let value = storedPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !value.isEmpty else { return nil }
+        if value.hasPrefix("/") { return value }
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("Avatars", isDirectory: true)
+            .appendingPathComponent(value)
+            .path
     }
 
     private func makeRelativeTime(from date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func makeStatView(count: String, title: String) -> UIView {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.alignment = .center
+        stackView.spacing = 2
+
+        let countLabel = UILabel()
+        countLabel.text = count
+        countLabel.font = AppFont.semibold(size: 25)
+        countLabel.textColor = Constants.darkTextColor
+        countLabel.textAlignment = .center
+
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = AppFont.medium(size: 12)
+        titleLabel.textColor = Constants.darkTextColor
+        titleLabel.textAlignment = .center
+
+        stackView.addArrangedSubview(countLabel)
+        stackView.addArrangedSubview(titleLabel)
+        return stackView
     }
 
     private func makeThumbnailImageView(image: UIImage) -> UIImageView {
@@ -522,22 +429,44 @@ final class ProfileViewController: BaseViewController {
         return imageView
     }
 
-    private func cleanedText(_ text: String?) -> String? {
-        let value = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !value.isEmpty else {
+    @objc private func handleChatTapped() {
+        let viewController = MessagesViewController(receiverUserId: userId)
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    @objc private func handleFollowTapped() {
+        guard let currentUser = loadCurrentUser(),
+              case .success(let targetUser) = userRepository.fetchUser(id: userId) else {
+            AppToast.show(message: NSLocalizedString("User not found.", comment: "Missing user toast"), in: view)
+            return
+        }
+
+        guard currentUser.id != targetUser.id else {
+            AppToast.show(message: NSLocalizedString("You cannot follow yourself.", comment: "Follow self toast"), in: view)
+            return
+        }
+
+        switch userRepository.addRelation(from: currentUser, to: targetUser, type: .follow) {
+        case .success:
+            AppToast.show(message: NSLocalizedString("Followed successfully.", comment: "Follow success toast"), in: view)
+        case .failure(.duplicateRelation):
+            AppToast.show(message: NSLocalizedString("Already followed.", comment: "Already followed toast"), in: view)
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to follow.", comment: "Follow failure toast"), in: view)
+        }
+    }
+
+    private func loadCurrentUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId) {
+            return user
+        }
+
+        guard case .success(let user) = userRepository.fetchCurrentUser() else {
             return nil
         }
-
-        if value.hasPrefix("/") {
-            return value
-        }
-
-        if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            return documentsURL
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(value)
-                .path
-        }
-        return value
+        return user
     }
 }

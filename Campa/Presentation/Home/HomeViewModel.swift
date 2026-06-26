@@ -25,6 +25,7 @@ final class HomeViewModel {
 
     init() {
         let campusPost = HomePost(
+            sourcePost: nil,
             author: "Jiwoo",
             school: "Korea University",
             time: "2 hours ago",
@@ -32,9 +33,9 @@ final class HomeViewModel {
                 "Springtime on campus: the cherry blossoms are in full bloom. welcome to come and take photos!",
                 comment: "Home post body"
             ),
-            avatarImageName: "user_icon",
-            heroImageName: "build",
-            thumbnailImageNames: ["build", "photo", "build_sel"],
+            avatarImage: UIImage(named: "user_icon"),
+            heroImage: UIImage(named: "build"),
+            thumbnailImages: ["build", "photo", "build_sel"].compactMap { UIImage(named: $0) },
             isHot: true,
             backgroundColor: Constants.purpleColor,
             primaryTextColor: Constants.whiteTextColor,
@@ -42,6 +43,7 @@ final class HomeViewModel {
         )
 
         let popularPost = HomePost(
+            sourcePost: nil,
             author: "Jiwoo",
             school: "Korea University",
             time: "2 hours ago",
@@ -49,9 +51,9 @@ final class HomeViewModel {
                 "Springtime on campus: the cherry blossoms are in full bloom. welcome to come and take photos!",
                 comment: "Home post body"
             ),
-            avatarImageName: "user_icon",
-            heroImageName: "photo",
-            thumbnailImageNames: ["photo", "build", "photo"],
+            avatarImage: UIImage(named: "user_icon"),
+            heroImage: UIImage(named: "photo"),
+            thumbnailImages: ["photo", "build", "photo"].compactMap { UIImage(named: $0) },
             isHot: false,
             backgroundColor: Constants.limeColor,
             primaryTextColor: Constants.darkTextColor,
@@ -67,13 +69,14 @@ final class HomeViewModel {
 }
 
 struct HomePost {
+    let sourcePost: Post?
     let author: String
     let school: String
     let time: String
     let body: String
-    let avatarImageName: String
-    let heroImageName: String
-    let thumbnailImageNames: [String]
+    let avatarImage: UIImage?
+    let heroImage: UIImage?
+    let thumbnailImages: [UIImage]
     let isHot: Bool
     let backgroundColor: UIColor
     let primaryTextColor: UIColor

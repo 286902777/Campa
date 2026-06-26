@@ -9,11 +9,19 @@ final class MessageListViewController: BaseViewController {
     }
 
     private let viewModel: MessageListViewModel
+    private let chatRepository: ChatRepository
+    private var conversations: [ChatConversation] = []
+    private var messages: [MessageListItem] = []
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let emptyView = EmptyView()
     private let starContainerView = UIImageView()
 
-    init(viewModel: MessageListViewModel = MessageListViewModel()) {
+    init(
+        viewModel: MessageListViewModel = MessageListViewModel(),
+        chatRepository: ChatRepository = ChatRepository()
+    ) {
         self.viewModel = viewModel
+        self.chatRepository = chatRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -28,11 +36,18 @@ final class MessageListViewController: BaseViewController {
         configureView()
         configureMessages()
         configureLayout()
+        loadConversations()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        loadConversations()
     }
 
     private func configureView() {
         self.changeNavbar(.title)
-        self.setTitleAndRight(title: "Message", right: nil)
+        self.setTitleAndRight(title: viewModel.title, right: nil)
         starContainerView.translatesAutoresizingMaskIntoConstraints = false
         starContainerView.backgroundColor = .clear
         starContainerView.layer.borderColor = UIColor(red: 0.45, green: 0.36, blue: 0.30, alpha: 0.45).cgColor
@@ -60,6 +75,9 @@ final class MessageListViewController: BaseViewController {
         tableView.register(MessageListTableViewCell.self, forCellReuseIdentifier: MessageListTableViewCell.reuseIdentifier)
 
         view.addSubview(tableView)
+        emptyView.translatesAutoresizingMaskIntoConstraints = false
+        emptyView.isHidden = true
+        view.addSubview(emptyView)
     }
 
     private func configureLayout() {
@@ -69,12 +87,105 @@ final class MessageListViewController: BaseViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
+
+        NSLayoutConstraint.activate([
+            emptyView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 27),
+            emptyView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            emptyView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            emptyView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+    }
+
+    private func loadConversations() {
+        guard case .success(let conversations) = chatRepository.fetchConversations() else {
+            self.conversations = []
+            messages = []
+            tableView.reloadData()
+            updateEmptyState()
+            return
+        }
+
+        self.conversations = conversations
+        messages = conversations.map(makeMessageItem(from:))
+        tableView.reloadData()
+        updateEmptyState()
+    }
+
+    private func updateEmptyState() {
+        let isEmpty = messages.isEmpty
+        tableView.isHidden = isEmpty
+        emptyView.isHidden = !isEmpty
+    }
+
+    private func makeMessageItem(from conversation: ChatConversation) -> MessageListItem {
+        let displayUser = makeDisplayUser(from: conversation)
+        let sentDate = conversation.lastMessageAt ?? conversation.updatedAt
+        return MessageListItem(
+            name: cleanedText(conversation.title) ?? cleanedText(displayUser?.nickname) ?? NSLocalizedString("Unknown", comment: "Unknown message sender"),
+            preview: cleanedText(conversation.lastMessageText) ?? NSLocalizedString("No messages yet", comment: "Empty conversation preview"),
+            time: makeTimeText(from: sentDate),
+            unreadCount: conversation.unreadCount > 0 ? Int(conversation.unreadCount) : nil,
+            avatarImage: makeAvatarImage(from: displayUser?.avatarLocalPath)
+        )
+    }
+
+    private func makeDisplayUser(from conversation: ChatConversation) -> User? {
+        let currentUserId = currentUserId()
+        let users = conversation.participants?
+            .compactMap(\.user)
+            .sorted { $0.nickname < $1.nickname } ?? []
+
+        if let currentUserId,
+           let otherUser = users.first(where: { $0.id != currentUserId }) {
+            return otherUser
+        }
+        return users.first
+    }
+
+    private func currentUserId() -> UUID? {
+        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey) else {
+            return nil
+        }
+        return UUID(uuidString: userIdString)
+    }
+
+    private func makeTimeText(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.dateFormat = Calendar.current.isDateInToday(date) ? "h:mm a" : "MMM d"
+        return formatter.string(from: date)
+    }
+
+    private func makeAvatarImage(from storedPath: String?) -> UIImage? {
+        guard let storedPath = cleanedText(storedPath) else {
+            return UIImage(named: "user_icon")
+        }
+
+        let avatarURL: URL?
+        if storedPath.hasPrefix("/") {
+            avatarURL = URL(fileURLWithPath: storedPath)
+        } else {
+            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Avatars", isDirectory: true)
+                .appendingPathComponent(storedPath)
+        }
+
+        guard let avatarURL,
+              let image = UIImage(contentsOfFile: avatarURL.path) else {
+            return UIImage(named: "user_icon")
+        }
+        return image
+    }
+
+    private func cleanedText(_ text: String?) -> String? {
+        let value = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
     }
 }
 
 extension MessageListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.messages.count
+        messages.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -85,13 +196,12 @@ extension MessageListViewController: UITableViewDataSource, UITableViewDelegate 
             return UITableViewCell()
         }
 
-        cell.configure(item: viewModel.messages[indexPath.row])
+        cell.configure(item: messages[indexPath.row])
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-         let _ = viewModel.messages[indexPath.row]
-         let vc = MessagesViewController()
+        let vc = MessagesViewController(conversation: conversations[indexPath.row])
         navigationController?.pushViewController(vc, animated: true)
     }
 }
@@ -164,6 +274,7 @@ private final class MessageListCardView: UIView {
         nameLabel.text = item.name
         previewLabel.text = item.preview
         timeLabel.text = item.time
+        avatarImageView.image = item.avatarImage ?? UIImage(named: "user_icon")
     }
 
     private func configureView() {

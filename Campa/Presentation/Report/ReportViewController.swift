@@ -18,7 +18,6 @@ final class ReportViewController: BaseViewController {
 
     private var optionButtons: [UIButton] = []
     private var selectedOptionIndex = 0
-    var clickBlock: (() -> Void)?
     
     private let options = [
         NSLocalizedString("Malicious harassment", comment: "Report option"),
@@ -111,13 +110,15 @@ final class ReportViewController: BaseViewController {
     }
 
     @objc func clickSubmitAction() {
-        let vc = ReportAlertController()
-        vc.actionHandler = { [weak self] in
+        AppLoading.show(in: self.view) { [weak self] in
             guard let self = self else { return }
-            self.clickBlock?()
+            AppToast.show(
+                message: "Submit successed!",
+                in: view,
+                relation: .above(view.centerYAnchor, spacing: 0),
+                accessibilityIdentifier: "ReportToastLabel"
+            )
         }
-        vc.modalPresentationStyle = .overFullScreen
-        self.present(vc, animated: false)
     }
     
     private func configureLayout() {

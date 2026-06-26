@@ -1,33 +1,7 @@
-import Foundation
+import UIKit
 
 final class MessageListViewModel {
     let title = NSLocalizedString("Message", comment: "Message list screen title")
-    let messages: [MessageListItem] = [
-        MessageListItem(
-            name: NSLocalizedString("Keane Glass", comment: "Message sender name"),
-            preview: NSLocalizedString("Yo! Any fun plans brewing for later?", comment: "Message preview"),
-            time: NSLocalizedString("7:23 AM", comment: "Message timestamp"),
-            unreadCount: 4
-        ),
-        MessageListItem(
-            name: NSLocalizedString("Keane Glass", comment: "Message sender name"),
-            preview: NSLocalizedString("Yo! Any fun plans brewing for later?", comment: "Message preview"),
-            time: NSLocalizedString("7:23 AM", comment: "Message timestamp"),
-            unreadCount: nil
-        ),
-        MessageListItem(
-            name: NSLocalizedString("Keane Glass", comment: "Message sender name"),
-            preview: NSLocalizedString("Yo! Any fun plans brewing for later?", comment: "Message preview"),
-            time: NSLocalizedString("7:23 AM", comment: "Message timestamp"),
-            unreadCount: nil
-        ),
-        MessageListItem(
-            name: NSLocalizedString("Keane Glass", comment: "Message sender name"),
-            preview: NSLocalizedString("Yo! Any fun plans brewing for later?", comment: "Message preview"),
-            time: NSLocalizedString("7:23 AM", comment: "Message timestamp"),
-            unreadCount: nil
-        )
-    ]
 }
 
 struct MessageListItem {
@@ -35,4 +9,19 @@ struct MessageListItem {
     let preview: String
     let time: String
     let unreadCount: Int?
+    let avatarImage: UIImage?
+
+    init(
+        name: String,
+        preview: String,
+        time: String,
+        unreadCount: Int?,
+        avatarImage: UIImage? = nil
+    ) {
+        self.name = name
+        self.preview = preview
+        self.time = time
+        self.unreadCount = unreadCount
+        self.avatarImage = avatarImage
+    }
 }

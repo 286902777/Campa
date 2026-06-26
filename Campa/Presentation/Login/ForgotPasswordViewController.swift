@@ -8,14 +8,16 @@ final class ForgotPasswordViewController: BaseViewController {
     }
 
     private let viewModel: ForgotPasswordViewModel
+    private let userRepository: UserRepository
     private let titleLabel = UILabel()
     private let emailField = IconTextField(iconName: "email")
     private let passwordField = IconTextField(iconName: "password")
     private let confirmPasswordField = IconTextField(iconName: "password")
-    private let submitButton = UIButton(type: .system)
+    private let submitButton = UIButton(type: .custom)
 
-    init(viewModel: ForgotPasswordViewModel = ForgotPasswordViewModel()) {
+    init(viewModel: ForgotPasswordViewModel = ForgotPasswordViewModel(), userRepository: UserRepository = UserRepository()) {
         self.viewModel = viewModel
+        self.userRepository = userRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -45,7 +47,7 @@ final class ForgotPasswordViewController: BaseViewController {
         emailField.translatesAutoresizingMaskIntoConstraints = false
         emailField.placeholder = viewModel.emailPlaceholder
         emailField.keyboardType = .emailAddress
-        emailField.textContentType = .username
+        emailField.textContentType = .emailAddress
         emailField.autocapitalizationType = .none
         emailField.accessibilityIdentifier = "forgotPasswordEmailField"
 
@@ -70,6 +72,7 @@ final class ForgotPasswordViewController: BaseViewController {
         submitButton.backgroundColor = UIColor(red: 0.28, green: 0.02, blue: 0.01, alpha: 1.0)
         submitButton.layer.cornerRadius = Constants.buttonHeight / 2
         submitButton.accessibilityIdentifier = "forgotPasswordSubmitButton"
+        submitButton.addTarget(self, action: #selector(clickSaveAction), for: .touchUpInside)
     }
 
     private func configureLayout() {
@@ -105,7 +108,43 @@ final class ForgotPasswordViewController: BaseViewController {
         ])
     }
 
-    @objc private func handleBackButtonTapped() {
-        navigationController?.popViewController(animated: true)
+    @objc private func clickSaveAction() {
+        let email = emailField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let password = passwordField.text ?? ""
+        let confirmPassword = confirmPasswordField.text ?? ""
+
+        guard !email.isEmpty, !password.isEmpty, !confirmPassword.isEmpty else {
+            showToast(message: viewModel.emptyInputMessage)
+            return
+        }
+
+        guard password.count >= 6 else {
+            showToast(message: viewModel.passwordTooShortMessage)
+            return
+        }
+
+        guard password == confirmPassword else {
+            showToast(message: viewModel.passwordMismatchMessage)
+            return
+        }
+
+        switch userRepository.updatePassword(email: email, passwordHash: viewModel.hash(password)) {
+        case .success:
+            showToast(message: viewModel.saveSuccessMessage)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+        case .failure:
+            showToast(message: viewModel.saveFailedMessage)
+        }
+    }
+
+    private func showToast(message: String) {
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .above(submitButton.topAnchor, spacing: 18),
+            accessibilityIdentifier: "forgotPasswordToastLabel"
+        )
     }
 }

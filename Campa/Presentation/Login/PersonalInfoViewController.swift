@@ -345,6 +345,11 @@ final class PersonalInfoViewController: BaseViewController {
             return
         }
 
+        guard let selectedAvatarLocalPath else {
+            showToast(message: viewModel.requiredAvatarMessage)
+            return
+        }
+
         let result = userRepository.createRegisteredCurrentUser(
             email: registrationDraft.email,
             passwordHash: registrationDraft.passwordHash,
@@ -357,8 +362,11 @@ final class PersonalInfoViewController: BaseViewController {
 
         switch result {
         case .success(let user):
-            UserDefaults.standard.set(user.id.uuidString, forKey: CurrentUserIdKey)
-            switchToMainTabBarController()
+            AppLoading.show(in: self.view) { [weak self] in
+                guard let self = self else { return }
+                UserDefaults.standard.set(user.id.uuidString, forKey: CurrentUserIdKey)
+                self.switchToMainTabBarController()
+            }
         case .failure:
             showToast(message: viewModel.saveFailedMessage)
         }
@@ -388,45 +396,22 @@ final class PersonalInfoViewController: BaseViewController {
         let avatarsDirectoryURL = documentsURL.appendingPathComponent("Avatars", isDirectory: true)
         do {
             try FileManager.default.createDirectory(at: avatarsDirectoryURL, withIntermediateDirectories: true)
-            let fileURL = avatarsDirectoryURL.appendingPathComponent("\(UUID().uuidString).jpg")
+            let imageName = "\(UUID().uuidString).jpg"
+            let fileURL = avatarsDirectoryURL.appendingPathComponent(imageName)
             try imageData.write(to: fileURL, options: .atomic)
-            return fileURL.path
+            return imageName
         } catch {
             return nil
         }
     }
 
     private func showToast(message: String) {
-        let toastLabel = UILabel()
-        toastLabel.translatesAutoresizingMaskIntoConstraints = false
-        toastLabel.text = message
-        toastLabel.textColor = .white
-        toastLabel.font = AppFont.medium(size: 13)
-        toastLabel.textAlignment = .center
-        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.72)
-        toastLabel.layer.cornerRadius = 18
-        toastLabel.clipsToBounds = true
-        toastLabel.alpha = 0
-        toastLabel.accessibilityIdentifier = "personalInfoToastLabel"
-
-        view.addSubview(toastLabel)
-
-        NSLayoutConstraint.activate([
-            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            toastLabel.bottomAnchor.constraint(equalTo: saveButton.topAnchor, constant: -18),
-            toastLabel.heightAnchor.constraint(equalToConstant: 36),
-            toastLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 190)
-        ])
-
-        UIView.animate(withDuration: 0.2, animations: {
-            toastLabel.alpha = 1
-        }, completion: { _ in
-            UIView.animate(withDuration: 0.2, delay: 1.4, options: [], animations: {
-                toastLabel.alpha = 0
-            }, completion: { _ in
-                toastLabel.removeFromSuperview()
-            })
-        })
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .above(saveButton.topAnchor, spacing: 18),
+            accessibilityIdentifier: "personalInfoToastLabel"
+        )
     }
 }
 

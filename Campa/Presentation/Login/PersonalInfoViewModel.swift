@@ -18,6 +18,7 @@ final class PersonalInfoViewModel {
     let saveTitle = NSLocalizedString("Save", comment: "Save personal info")
     let defaultGender: PersonalInfoGender = .male
     let requiredInfoMessage = NSLocalizedString("Please complete all information", comment: "Personal info required fields toast")
+    let requiredAvatarMessage = NSLocalizedString("Please upload your avatar", comment: "Personal info avatar required toast")
     let missingRegistrationMessage = NSLocalizedString("Missing sign up information", comment: "Missing registration draft toast")
     let saveFailedMessage = NSLocalizedString("Save failed", comment: "Personal info save failure toast")
 

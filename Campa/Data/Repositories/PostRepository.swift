@@ -95,6 +95,29 @@ final class PostRepository {
         }
     }
 
+    func fetchPosts(for author: User) -> Result<[Post], PersistenceError> {
+        let request = Post.fetchRequest()
+        request.predicate = NSPredicate(format: "author == %@", author)
+        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+
+        do {
+            return .success(try context.fetch(request))
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func countPosts(for author: User) -> Result<Int, PersistenceError> {
+        let request = Post.fetchRequest()
+        request.predicate = NSPredicate(format: "author == %@", author)
+
+        do {
+            return .success(try context.count(for: request))
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
     private func fetchBlockedUsers(for currentUser: User) -> [User] {
         let request = UserRelation.fetchRequest()
         request.predicate = NSPredicate(format: "sourceUser == %@ AND type == %@", currentUser, UserRelationType.block.rawValue)

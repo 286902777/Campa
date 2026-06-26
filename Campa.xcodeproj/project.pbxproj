@@ -37,6 +37,9 @@
 		0A0000010000000000000023 /* PersonalInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A000001000000000000012D /* PersonalInfoViewModel.swift */; };
 		0A0000010000000000000024 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A000001000000000000012E /* ProfileViewController.swift */; };
 		0A0000010000000000000025 /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A000001000000000000012F /* ProfileViewModel.swift */; };
+		0A0000010000000000000026 /* AppToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000130 /* AppToast.swift */; };
+		0A0000010000000000000027 /* AppLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000131 /* AppLoading.swift */; };
+		0A0000010000000000000028 /* EditProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000132 /* EditProfileViewController.swift */; };
 		0A0000010000000000000030 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001301 /* Alamofire */; };
 		0A0000010000000000000031 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001302 /* SnapKit */; };
 		0A0000010000000000000032 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001303 /* IQKeyboardManagerSwift */; };
@@ -61,8 +64,13 @@
 		1746C5AF2FED11AB00305DF9 /* ReportAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */; };
 		1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5AE2FEDE00100305DF9 /* PostViewController.swift */; };
 		1746C5B12FED348900305DF9 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B02FED348900305DF9 /* AppInfo.swift */; };
+		1746C5B32FEE134400305DF9 /* DeleteUserAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B22FEE134400305DF9 /* DeleteUserAlertController.swift */; };
 		1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B22FEE318500305DF9 /* CampusViewController.swift */; };
 		1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */; };
+		1746C5B92FEF300000305DF9 /* PostDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5B82FEF300000305DF9 /* PostDetailViewController.swift */; };
+		1746C5BB2FEF400000305DF9 /* OtherProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */; };
+		1746C5BD2FEF500000305DF9 /* FollowViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BC2FEF500000305DF9 /* FollowViewController.swift */; };
+		1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +125,9 @@
 		0A000001000000000000012D /* PersonalInfoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalInfoViewModel.swift; sourceTree = "<group>"; };
 		0A000001000000000000012E /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
 		0A000001000000000000012F /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
+		0A0000010000000000000130 /* AppToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToast.swift; sourceTree = "<group>"; };
+		0A0000010000000000000131 /* AppLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLoading.swift; sourceTree = "<group>"; };
+		0A0000010000000000000132 /* EditProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileViewController.swift; sourceTree = "<group>"; };
 		0B0000010000000000000101 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
 		0B0000010000000000000102 /* PersistenceEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEntities.swift; sourceTree = "<group>"; };
 		0B0000010000000000000103 /* PersistenceEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEnums.swift; sourceTree = "<group>"; };
@@ -140,8 +151,13 @@
 		1746C5AE2FEDE00100305DF9 /* PostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewController.swift; sourceTree = "<group>"; };
 		1746C5B02FED348900305DF9 /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
 		1746C5B12FEE015A00305DF9 /* Campa.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Campa.entitlements; sourceTree = "<group>"; };
+		1746C5B22FEE134400305DF9 /* DeleteUserAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUserAlertController.swift; sourceTree = "<group>"; };
 		1746C5B22FEE318500305DF9 /* CampusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampusViewController.swift; sourceTree = "<group>"; };
 		1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportViewController.swift; sourceTree = "<group>"; };
+		1746C5B82FEF300000305DF9 /* PostDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailViewController.swift; sourceTree = "<group>"; };
+		1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherProfileViewController.swift; sourceTree = "<group>"; };
+		1746C5BC2FEF500000305DF9 /* FollowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowViewController.swift; sourceTree = "<group>"; };
+		1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlacklistViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -228,6 +244,7 @@
 			children = (
 				0A0000010000000000000103 /* HomeViewController.swift */,
 				0A0000010000000000000104 /* HomeViewModel.swift */,
+				1746C5B82FEF300000305DF9 /* PostDetailViewController.swift */,
 				1746C5AC2FECCDD400305DF9 /* EmptyView.swift */,
 			);
 			path = Home;
@@ -331,6 +348,8 @@
 			isa = PBXGroup;
 			children = (
 				0A0000010000000000000127 /* AppFont.swift */,
+				0A0000010000000000000130 /* AppToast.swift */,
+				0A0000010000000000000131 /* AppLoading.swift */,
 				1746C5B02FED348900305DF9 /* AppInfo.swift */,
 			);
 			path = Common;
@@ -343,6 +362,10 @@
 				0A000001000000000000012B /* SettingsViewModel.swift */,
 				0A000001000000000000012E /* ProfileViewController.swift */,
 				0A000001000000000000012F /* ProfileViewModel.swift */,
+				1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */,
+				1746C5BC2FEF500000305DF9 /* FollowViewController.swift */,
+				1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */,
+				0A0000010000000000000132 /* EditProfileViewController.swift */,
 				1746C5AA2FECC89200305DF9 /* WebViewController.swift */,
 			);
 			path = Settings;
@@ -391,6 +414,7 @@
 		1746C5A42FEBF02300305DF9 /* Alert */ = {
 			isa = PBXGroup;
 			children = (
+				1746C5B22FEE134400305DF9 /* DeleteUserAlertController.swift */,
 				1746C5A82FEBF2BF00305DF9 /* PayAlertController.swift */,
 				1746C5AE2FED11AB00305DF9 /* ReportAlertController.swift */,
 			);
@@ -572,6 +596,9 @@
 				0A0000010000000000000001 /* AppDelegate.swift in Sources */,
 				0A0000010000000000000002 /* SceneDelegate.swift in Sources */,
 				0A000001000000000000001D /* AppFont.swift in Sources */,
+				0A0000010000000000000026 /* AppToast.swift in Sources */,
+				0A0000010000000000000027 /* AppLoading.swift in Sources */,
+				0A0000010000000000000028 /* EditProfileViewController.swift in Sources */,
 				0A000001000000000000001A /* MainTabBarController.swift in Sources */,
 				1746C5A92FEBF2BF00305DF9 /* PayAlertController.swift in Sources */,
 				1746C5A32FEBE74900305DF9 /* BaseViewController.swift in Sources */,
@@ -601,6 +628,7 @@
 				1746C5AD2FECCDD400305DF9 /* EmptyView.swift in Sources */,
 				0A0000010000000000000003 /* HomeViewController.swift in Sources */,
 				0A0000010000000000000004 /* HomeViewModel.swift in Sources */,
+				1746C5B32FEE134400305DF9 /* DeleteUserAlertController.swift in Sources */,
 				0B0000010000000000000001 /* CoreDataStack.swift in Sources */,
 				0B0000010000000000000002 /* PersistenceEntities.swift in Sources */,
 				0B0000010000000000000003 /* PersistenceEnums.swift in Sources */,
@@ -612,6 +640,10 @@
 				1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */,
 				1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */,
 				1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */,
+				1746C5B92FEF300000305DF9 /* PostDetailViewController.swift in Sources */,
+				1746C5BB2FEF400000305DF9 /* OtherProfileViewController.swift in Sources */,
+				1746C5BD2FEF500000305DF9 /* FollowViewController.swift in Sources */,
+				1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

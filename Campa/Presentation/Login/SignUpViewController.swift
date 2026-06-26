@@ -46,7 +46,7 @@ final class SignUpViewController: BaseViewController {
         emailField.translatesAutoresizingMaskIntoConstraints = false
         emailField.placeholder = viewModel.emailPlaceholder
         emailField.keyboardType = .emailAddress
-        emailField.textContentType = .username
+        emailField.textContentType = .emailAddress
         emailField.autocapitalizationType = .none
         emailField.accessibilityIdentifier = "signUpEmailField"
 
@@ -125,35 +125,11 @@ final class SignUpViewController: BaseViewController {
     }
 
     private func showToast(message: String) {
-        let toastLabel = UILabel()
-        toastLabel.translatesAutoresizingMaskIntoConstraints = false
-        toastLabel.text = message
-        toastLabel.textColor = .white
-        toastLabel.font = AppFont.medium(size: 13)
-        toastLabel.textAlignment = .center
-        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.72)
-        toastLabel.layer.cornerRadius = 18
-        toastLabel.clipsToBounds = true
-        toastLabel.alpha = 0
-        toastLabel.accessibilityIdentifier = "signUpToastLabel"
-
-        view.addSubview(toastLabel)
-
-        NSLayoutConstraint.activate([
-            toastLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            toastLabel.topAnchor.constraint(equalTo: signUpButton.bottomAnchor, constant: 18),
-            toastLabel.heightAnchor.constraint(equalToConstant: 36),
-            toastLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 190)
-        ])
-
-        UIView.animate(withDuration: 0.2, animations: {
-            toastLabel.alpha = 1
-        }, completion: { _ in
-            UIView.animate(withDuration: 0.2, delay: 1.4, options: [], animations: {
-                toastLabel.alpha = 0
-            }, completion: { _ in
-                toastLabel.removeFromSuperview()
-            })
-        })
+        AppToast.show(
+            message: message,
+            in: view,
+            relation: .below(signUpButton.bottomAnchor, spacing: 18),
+            accessibilityIdentifier: "signUpToastLabel"
+        )
     }
 }

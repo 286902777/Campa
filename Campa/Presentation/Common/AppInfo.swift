@@ -8,3 +8,7 @@
 import Foundation
 
 let CurrentUserIdKey = "currentUserId"
+
+extension Notification.Name {
+    static let postDidPublish = Notification.Name("postDidPublish")
+}
