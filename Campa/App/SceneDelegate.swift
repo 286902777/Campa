@@ -12,6 +12,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
+        LocalDataSeeder.shared.seedIfNeeded()
+
         let window = UIWindow(windowScene: windowScene)
         if let userId = UserDefaults.standard.string(forKey: CurrentUserIdKey), userId.count > 0 {
             window.rootViewController = MainTabBarController()

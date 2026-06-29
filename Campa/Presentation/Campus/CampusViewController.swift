@@ -7,28 +7,51 @@ final class CampusViewController: BaseViewController {
         static let limeColor = UIColor(red: 0.86, green: 0.90, blue: 0.12, alpha: 1.0)
         static let darkTextColor = UIColor(red: 52/255.0, green: 4/255, blue: 4/255.0, alpha: 1.0)
         static let horizontalInset: CGFloat = 24
+        static let recentHeaderHeight: CGFloat = 44
     }
 
     private let titleLabel = UILabel()
     private let locationIconView = UIImageView()
     private let locationLabel = UILabel()
     private let starContainerView = UIImageView()
+    private let recentHeaderView = UIView()
+    private let recentIconView = UIImageView()
+    private let recentTitleLabel = UILabel()
+    private let recentAddButton = UIButton(type: .custom)
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let activityRepository: ActivityRepository
 
-    private let activities: [CampusActivity] = [
-        CampusActivity(imageName: "build", title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
-        CampusActivity(imageName: "build_sel", title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
-        CampusActivity(imageName: "photo", title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
-        CampusActivity(imageName: "build", title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus")
+    private var activities: [CampusActivity] = [
+        CampusActivity(imageNames: ["build", "build_sel", "photo"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
+        CampusActivity(imageNames: ["build_sel", "photo", "build"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
+        CampusActivity(imageNames: ["photo", "build", "build_sel"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
+        CampusActivity(imageNames: ["build", "photo", "build_sel"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus")
     ]
+
+    init(activityRepository: ActivityRepository = ActivityRepository()) {
+        self.activityRepository = activityRepository
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         configureView()
         configureHeader()
+        configureRecentHeader()
         configureTableView()
         configureLayout()
+        configureNotification()
+        loadActivities()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     private func configureView() {
@@ -63,6 +86,31 @@ final class CampusViewController: BaseViewController {
         view.addSubview(starContainerView)
     }
 
+    private func configureRecentHeader() {
+        recentHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        recentHeaderView.backgroundColor = .clear
+
+        recentIconView.translatesAutoresizingMaskIntoConstraints = false
+        recentIconView.image = UIImage(named: "camp")
+        recentIconView.contentMode = .scaleAspectFit
+
+        recentTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        recentTitleLabel.text = NSLocalizedString("Recent Activities", comment: "Recent activities header title")
+        recentTitleLabel.font = AppFont.medium(size: 14)
+        recentTitleLabel.textColor = Constants.darkTextColor
+
+        recentAddButton.translatesAutoresizingMaskIntoConstraints = false
+        recentAddButton.setTitle("+", for: .normal)
+        recentAddButton.setTitleColor(Constants.darkTextColor, for: .normal)
+        recentAddButton.titleLabel?.font = AppFont.bold(size: 30)
+        recentAddButton.addTarget(self, action: #selector(handleRecentAddTapped), for: .touchUpInside)
+
+        recentHeaderView.addSubview(recentIconView)
+        recentHeaderView.addSubview(recentTitleLabel)
+        recentHeaderView.addSubview(recentAddButton)
+        view.addSubview(recentHeaderView)
+    }
+
     private func configureTableView() {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .clear
@@ -72,6 +120,7 @@ final class CampusViewController: BaseViewController {
         tableView.estimatedRowHeight = 112
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 120, right: 0)
         tableView.dataSource = self
+        tableView.delegate = self
         tableView.register(CampusActivityTableViewCell.self, forCellReuseIdentifier: CampusActivityTableViewCell.reuseIdentifier)
         view.addSubview(tableView)
     }
@@ -96,15 +145,99 @@ final class CampusViewController: BaseViewController {
             starContainerView.widthAnchor.constraint(equalToConstant: 88),
             starContainerView.heightAnchor.constraint(equalToConstant: 29),
 
-            tableView.topAnchor.constraint(equalTo: locationIconView.bottomAnchor, constant: 28),
+            recentHeaderView.topAnchor.constraint(equalTo: locationIconView.bottomAnchor, constant: 22),
+            recentHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            recentHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            recentHeaderView.heightAnchor.constraint(equalToConstant: Constants.recentHeaderHeight),
+
+            recentIconView.leadingAnchor.constraint(equalTo: recentHeaderView.leadingAnchor),
+            recentIconView.centerYAnchor.constraint(equalTo: recentHeaderView.centerYAnchor),
+            recentIconView.widthAnchor.constraint(equalToConstant: 30),
+            recentIconView.heightAnchor.constraint(equalToConstant: 30),
+
+            recentTitleLabel.leadingAnchor.constraint(equalTo: recentIconView.trailingAnchor, constant: 8),
+            recentTitleLabel.centerYAnchor.constraint(equalTo: recentHeaderView.centerYAnchor),
+            recentTitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: recentAddButton.leadingAnchor, constant: -12),
+
+            recentAddButton.trailingAnchor.constraint(equalTo: recentHeaderView.trailingAnchor),
+            recentAddButton.centerYAnchor.constraint(equalTo: recentHeaderView.centerYAnchor),
+            recentAddButton.widthAnchor.constraint(equalToConstant: 44),
+            recentAddButton.heightAnchor.constraint(equalToConstant: 44),
+
+            tableView.topAnchor.constraint(equalTo: recentHeaderView.bottomAnchor, constant: 6),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
+
+    @objc private func handleRecentAddTapped() {
+        let vc = ActivityCreateViewController()
+        vc.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
+    private func configureNotification() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleActivityDidPublish),
+            name: .activityDidPublish,
+            object: nil
+        )
+    }
+
+    @objc private func handleActivityDidPublish() {
+        loadActivities()
+    }
+
+    private func loadActivities() {
+        guard case .success(let databaseActivities) = activityRepository.fetchPublishedActivities(),
+              !databaseActivities.isEmpty else {
+            return
+        }
+
+        activities = databaseActivities.map(makeCampusActivity)
+        tableView.reloadData()
+    }
+
+    private func makeCampusActivity(from activity: Activity) -> CampusActivity {
+        let images = (try? activityRepository.fetchImages(for: activity).get()) ?? []
+        let imagePaths = images.prefix(3).map(\.localPath)
+        return CampusActivity(
+            activity: activity,
+            imageNames: ["build", "build_sel", "photo"],
+            imagePaths: imagePaths,
+            title: activity.title,
+            date: makeDateText(from: activity.startAt),
+            campus: activity.addressText ?? NSLocalizedString("Yonsei Main Campus", comment: "Default activity campus")
+        )
+    }
+
+    private func makeDateText(from date: Date?) -> String {
+        guard let date else {
+            return NSLocalizedString("No time", comment: "Activity empty time")
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d | E h:mm a"
+        return formatter.string(from: date)
+    }
+    private func showActivityDetail(for activity: CampusActivity) {
+        let detailData = ActivityDetailData(
+            title: activity.title,
+            dateText: activity.date,
+            locationText: activity.campus,
+            imageNames: activity.imageNames,
+            imagePaths: activity.imagePaths
+        )
+        let viewController = ActivityDetailViewController(activity: activity.activity, displayData: detailData)
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
 }
 
-extension CampusViewController: UITableViewDataSource {
+extension CampusViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         activities.count
     }
@@ -120,10 +253,18 @@ extension CampusViewController: UITableViewDataSource {
         cell.configure(activity: activities[indexPath.row])
         return cell
     }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard activities.indices.contains(indexPath.row) else { return }
+        showActivityDetail(for: activities[indexPath.row])
+    }
 }
 
 private struct CampusActivity {
-    let imageName: String
+    var activity: Activity? = nil
+    let imageNames: [String]
+    var imagePaths: [String] = []
     let title: String
     let date: String
     let campus: String
@@ -153,10 +294,27 @@ private final class CampusActivityTableViewCell: UITableViewCell {
     }
 
     func configure(activity: CampusActivity) {
-        activityImageView.image = UIImage(named: activity.imageName)
+        activityImageView.image = makeActivityImage(from: activity.imagePaths.first) ?? UIImage(named: activity.imageNames.first ?? "build")
         titleLabel.text = activity.title
         dateLabel.text = activity.date
         campusLabel.text = activity.campus
+    }
+
+    private func makeActivityImage(from imagePath: String?) -> UIImage? {
+        guard let imagePath = imagePath?.trimmingCharacters(in: .whitespacesAndNewlines), !imagePath.isEmpty else {
+            return nil
+        }
+
+        let imageURL: URL?
+        if imagePath.hasPrefix("/") {
+            imageURL = URL(fileURLWithPath: imagePath)
+        } else {
+            imageURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("ActivityImages", isDirectory: true)
+                .appendingPathComponent(imagePath)
+        }
+
+        return imageURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: imagePath)
     }
 
     private func configureViews() {

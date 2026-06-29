@@ -104,6 +104,18 @@ final class ActivityRepository {
         }
     }
 
+    func fetchPublishedActivities() -> Result<[Activity], PersistenceError> {
+        let request = Activity.fetchRequest()
+        request.predicate = NSPredicate(format: "status == %@", ActivityStatus.published.rawValue)
+        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+
+        do {
+            return .success(try context.fetch(request))
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
     func fetchComments(forPostId postId: UUID) -> Result<[PostComment], PersistenceError> {
         let postRequest = Post.fetchRequest()
         postRequest.fetchLimit = 1

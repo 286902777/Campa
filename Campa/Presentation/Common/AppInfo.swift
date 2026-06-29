@@ -11,4 +11,5 @@ let CurrentUserIdKey = "currentUserId"
 
 extension Notification.Name {
     static let postDidPublish = Notification.Name("postDidPublish")
+    static let activityDidPublish = Notification.Name("activityDidPublish")
 }

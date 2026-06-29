@@ -51,6 +51,7 @@
 		0B0000010000000000000006 /* ChatRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000106 /* ChatRepository.swift */; };
 		0B0000010000000000000007 /* PostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000107 /* PostRepository.swift */; };
 		0B0000010000000000000008 /* ActivityRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000108 /* ActivityRepository.swift */; };
+		0B000001000000000000000F /* LocalDataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000110 /* LocalDataSeeder.swift */; };
 		0B0000010000000000000009 /* CoreDataStackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0000010000000000000109 /* CoreDataStackTests.swift */; };
 		0B000001000000000000000A /* PersistenceEnumsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010A /* PersistenceEnumsTests.swift */; };
 		0B000001000000000000000B /* UserRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B000001000000000000010B /* UserRepositoryTests.swift */; };
@@ -71,6 +72,8 @@
 		1746C5BB2FEF400000305DF9 /* OtherProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */; };
 		1746C5BD2FEF500000305DF9 /* FollowViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BC2FEF500000305DF9 /* FollowViewController.swift */; };
 		1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */; };
+		1746C5C12FEF700000305DF9 /* ActivityDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */; };
+		1746C5C32FEF800000305DF9 /* ActivityCreateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +139,7 @@
 		0B0000010000000000000106 /* ChatRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRepository.swift; sourceTree = "<group>"; };
 		0B0000010000000000000107 /* PostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRepository.swift; sourceTree = "<group>"; };
 		0B0000010000000000000108 /* ActivityRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRepository.swift; sourceTree = "<group>"; };
+		0B0000010000000000000110 /* LocalDataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDataSeeder.swift; sourceTree = "<group>"; };
 		0B0000010000000000000109 /* CoreDataStackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStackTests.swift; sourceTree = "<group>"; };
 		0B000001000000000000010A /* PersistenceEnumsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEnumsTests.swift; sourceTree = "<group>"; };
 		0B000001000000000000010B /* UserRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepositoryTests.swift; sourceTree = "<group>"; };
@@ -158,6 +162,8 @@
 		1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherProfileViewController.swift; sourceTree = "<group>"; };
 		1746C5BC2FEF500000305DF9 /* FollowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowViewController.swift; sourceTree = "<group>"; };
 		1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlacklistViewController.swift; sourceTree = "<group>"; };
+		1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailViewController.swift; sourceTree = "<group>"; };
+		1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityCreateViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -377,6 +383,7 @@
 				0B0000010000000000000602 /* Persistence */,
 				0B0000010000000000000603 /* Models */,
 				0B0000010000000000000604 /* Repositories */,
+				0B0000010000000000000605 /* Seed */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -411,6 +418,14 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
+		0B0000010000000000000605 /* Seed */ = {
+			isa = PBXGroup;
+			children = (
+				0B0000010000000000000110 /* LocalDataSeeder.swift */,
+			);
+			path = Seed;
+			sourceTree = "<group>";
+		};
 		1746C5A42FEBF02300305DF9 /* Alert */ = {
 			isa = PBXGroup;
 			children = (
@@ -441,6 +456,8 @@
 			isa = PBXGroup;
 			children = (
 				1746C5B22FEE318500305DF9 /* CampusViewController.swift */,
+				1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */,
+				1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */,
 			);
 			path = Campus;
 			sourceTree = "<group>";
@@ -637,6 +654,7 @@
 				0B0000010000000000000006 /* ChatRepository.swift in Sources */,
 				0B0000010000000000000007 /* PostRepository.swift in Sources */,
 				0B0000010000000000000008 /* ActivityRepository.swift in Sources */,
+				0B000001000000000000000F /* LocalDataSeeder.swift in Sources */,
 				1746C5AF2FEDE00100305DF9 /* PostViewController.swift in Sources */,
 				1746C5B32FEE318500305DF9 /* CampusViewController.swift in Sources */,
 				1746C5B62FEF1A6B00305DF9 /* ReportViewController.swift in Sources */,
@@ -644,6 +662,8 @@
 				1746C5BB2FEF400000305DF9 /* OtherProfileViewController.swift in Sources */,
 				1746C5BD2FEF500000305DF9 /* FollowViewController.swift in Sources */,
 				1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */,
+				1746C5C12FEF700000305DF9 /* ActivityDetailViewController.swift in Sources */,
+				1746C5C32FEF800000305DF9 /* ActivityCreateViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

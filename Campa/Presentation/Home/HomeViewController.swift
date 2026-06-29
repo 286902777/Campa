@@ -151,8 +151,8 @@ final class HomeViewController: BaseViewController {
         pageContainerView.translatesAutoresizingMaskIntoConstraints = false
         pageControllers = viewModel.segmentPosts.map { posts in
             let viewController = HomePostsPageViewController(posts: posts)
-            viewController.onMoreTapped = { [weak self] in
-                self?.showReport()
+            viewController.onMoreTapped = { [weak self] post in
+                self?.showReport(post: post)
             }
             viewController.onPostSelected = { [weak self] homePost in
                 self?.showPostDetail(homePost)
@@ -245,10 +245,55 @@ final class HomeViewController: BaseViewController {
         }
     }
 
-    private func showReport() {
-        let viewController = ReportViewController()
-        viewController.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(viewController, animated: true)
+    private func showReport(post: HomePost) {
+        let vc = ReportAlertController()
+        vc.modalPresentationStyle = .overFullScreen
+        vc.actionHandler = { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if result {
+                    self.blockReceiverUser(post: post)
+                } else {
+                    let reportVC = ReportViewController()
+                    self.navigationController?.pushViewController(reportVC, animated: true)
+                }
+            }
+        }
+        self.present(vc, animated: false)
+    }
+
+    private func blockReceiverUser(post: HomePost) {
+        guard  let currentUser = loadCurrentUser() else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+             return
+        }
+        guard let uid = post.sourcePost?.id,
+              case .success(let receiverUser) = userRepository.fetchUser(id: uid) else {
+             AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
+        case .success:
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
+        case .failure(.duplicateRelation):
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+        }
+    }
+
+    private func loadCurrentUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId) {
+            return user
+        }
+
+        guard case .success(let user) = userRepository.fetchCurrentUser() else {
+            return nil
+        }
+        return user
     }
 
     private func showPostDetail(_ homePost: HomePost) {
@@ -311,7 +356,7 @@ final class HomeViewController: BaseViewController {
         }
 
         return postImages.compactMap { image in
-            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) }
+            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: image.localPath)
         }
     }
 
@@ -348,7 +393,7 @@ final class HomeViewController: BaseViewController {
                 .appendingPathComponent(storedPath)
         }
 
-        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: "user_icon")
+        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: storedPath) ?? UIImage(named: "user_icon")
     }
 
     private func makeRelativeTime(from date: Date) -> String {
@@ -403,7 +448,7 @@ extension HomeViewController: UIPageViewControllerDataSource, UIPageViewControll
 private final class HomePostsPageViewController: UIViewController {
     private var posts: [HomePost]
     private let tableView = UITableView(frame: .zero, style: .plain)
-    var onMoreTapped: (() -> Void)?
+    var onMoreTapped: ((HomePost) -> Void)?
     var onPostSelected: ((HomePost) -> Void)?
 
     init(posts: [HomePost]) {
@@ -474,7 +519,8 @@ extension HomePostsPageViewController: UITableViewDataSource, UITableViewDelegat
         }
         cell.configure(post: posts[indexPath.row])
         cell.onMoreTapped = { [weak self] in
-            self?.onMoreTapped?()
+            guard let self = self else { return }
+            self.onMoreTapped?(self.posts[indexPath.row])
         }
         return cell
     }
