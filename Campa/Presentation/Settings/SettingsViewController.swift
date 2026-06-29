@@ -94,6 +94,18 @@ final class SettingsViewController: BaseViewController {
             let vc = BlacklistViewController()
             vc.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(vc, animated: true)
+        case 2:
+            break
+        case 3:
+            let vc = WebViewController()
+            vc.type = .userAgreement
+            vc.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(vc, animated: true)
+        case 4:
+            let vc = WebViewController()
+            vc.type = .privacyPolicy
+            vc.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(vc, animated: true)
         default:
             return
         }

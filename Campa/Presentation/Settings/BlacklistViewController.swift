@@ -79,8 +79,11 @@ final class BlacklistViewController: BaseViewController {
             users = []
         }
 
-        tableView.reloadData()
-        updateEmptyState()
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.tableView.reloadData()
+            self.updateEmptyState()
+        }
     }
 
     private func makeCurrentUser() -> User? {

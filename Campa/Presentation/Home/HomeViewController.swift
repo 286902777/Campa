@@ -130,8 +130,7 @@ final class HomeViewController: BaseViewController {
         segmentStackView.translatesAutoresizingMaskIntoConstraints = false
         segmentStackView.axis = .horizontal
         segmentStackView.alignment = .fill
-        segmentStackView.distribution = .fillEqually
-        segmentStackView.spacing = 0
+        segmentStackView.spacing = 24
 
         segmentButtons = viewModel.segments.enumerated().map { index, title in
             let button = UIButton(type: .system)
@@ -205,7 +204,6 @@ final class HomeViewController: BaseViewController {
 
             segmentStackView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 12),
             segmentStackView.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor),
-            segmentStackView.trailingAnchor.constraint(equalTo: searchContainerView.trailingAnchor),
             segmentStackView.heightAnchor.constraint(equalToConstant: 28),
 
             pageContainerView.topAnchor.constraint(equalTo: segmentStackView.bottomAnchor, constant: 4),
@@ -317,9 +315,11 @@ final class HomeViewController: BaseViewController {
         let homePosts = posts.enumerated().map { index, post in
             makeHomePost(from: post, index: index)
         }
-
-        pageControllers.forEach { controller in
-            controller.updatePosts(homePosts)
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.pageControllers.forEach { controller in
+                controller.updatePosts(homePosts)
+            }
         }
     }
 

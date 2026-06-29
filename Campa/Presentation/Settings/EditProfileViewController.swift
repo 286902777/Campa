@@ -201,12 +201,14 @@ final class EditProfileViewController: BaseViewController {
             showToast(message: NSLocalizedString("Please enter username", comment: "Edit profile username required toast"))
             return
         }
-
-        switch userRepository.updateUser(id: currentUserId, nickname: nickname, avatarLocalPath: currentAvatarLocalPath) {
-        case .success:
-            showToast(message: NSLocalizedString("Profile saved", comment: "Edit profile saved toast"))
-        case .failure:
-            showToast(message: NSLocalizedString("Failed to save profile", comment: "Edit profile save failed toast"))
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            switch userRepository.updateUser(id: currentUserId, nickname: nickname, avatarLocalPath: self.currentAvatarLocalPath) {
+            case .success:
+                self.showToast(message: NSLocalizedString("Profile saved", comment: "Edit profile saved toast"))
+            case .failure:
+                self.showToast(message: NSLocalizedString("Failed to save profile", comment: "Edit profile save failed toast"))
+            }
         }
     }
 

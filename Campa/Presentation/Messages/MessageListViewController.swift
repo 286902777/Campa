@@ -107,8 +107,11 @@ final class MessageListViewController: BaseViewController {
 
         self.conversations = conversations
         messages = conversations.map(makeMessageItem(from:))
-        tableView.reloadData()
-        updateEmptyState()
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.tableView.reloadData()
+            self.updateEmptyState()
+        }
     }
 
     private func updateEmptyState() {

@@ -197,7 +197,10 @@ final class CampusViewController: BaseViewController {
         }
 
         activities = databaseActivities.map(makeCampusActivity)
-        tableView.reloadData()
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.tableView.reloadData()
+        }
     }
 
     private func makeCampusActivity(from activity: Activity) -> CampusActivity {

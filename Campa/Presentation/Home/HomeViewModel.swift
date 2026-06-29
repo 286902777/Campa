@@ -24,46 +24,10 @@ final class HomeViewModel {
     let segmentPosts: [[HomePost]]
 
     init() {
-        let campusPost = HomePost(
-            sourcePost: nil,
-            author: "Jiwoo",
-            school: "Korea University",
-            time: "2 hours ago",
-            body: NSLocalizedString(
-                "Springtime on campus: the cherry blossoms are in full bloom. welcome to come and take photos!",
-                comment: "Home post body"
-            ),
-            avatarImage: UIImage(named: "user_icon"),
-            heroImage: UIImage(named: "build"),
-            thumbnailImages: ["build", "photo", "build_sel"].compactMap { UIImage(named: $0) },
-            isHot: true,
-            backgroundColor: Constants.purpleColor,
-            primaryTextColor: Constants.whiteTextColor,
-            secondaryTextColor: Constants.mutedWhiteTextColor
-        )
-
-        let popularPost = HomePost(
-            sourcePost: nil,
-            author: "Jiwoo",
-            school: "Korea University",
-            time: "2 hours ago",
-            body: NSLocalizedString(
-                "Springtime on campus: the cherry blossoms are in full bloom. welcome to come and take photos!",
-                comment: "Home post body"
-            ),
-            avatarImage: UIImage(named: "user_icon"),
-            heroImage: UIImage(named: "photo"),
-            thumbnailImages: ["photo", "build", "photo"].compactMap { UIImage(named: $0) },
-            isHot: false,
-            backgroundColor: Constants.limeColor,
-            primaryTextColor: Constants.darkTextColor,
-            secondaryTextColor: Constants.mutedDarkTextColor
-        )
-
         segmentPosts = [
-            [campusPost, popularPost],
             [],
-            [popularPost, campusPost]
+            [],
+            []
         ]
     }
 }
