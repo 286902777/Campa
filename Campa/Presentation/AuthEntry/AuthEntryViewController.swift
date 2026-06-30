@@ -296,9 +296,8 @@ final class AuthEntryViewController: UIViewController {
             return
         }
 
-        UIView.transition(with: window, duration: 0.25) {
-            window.rootViewController = MainTabBarController()
-        }
+        window.rootViewController = MainTabBarController()
+        window.makeKeyAndVisible()
     }
 
     @objc private func handleSignUpPromptTapped() {

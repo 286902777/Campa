@@ -40,6 +40,8 @@
 		0A0000010000000000000026 /* AppToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000130 /* AppToast.swift */; };
 		0A0000010000000000000027 /* AppLoading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000131 /* AppLoading.swift */; };
 		0A0000010000000000000028 /* EditProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000132 /* EditProfileViewController.swift */; };
+		0A0000010000000000000029 /* CurrentCityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000133 /* CurrentCityProvider.swift */; };
+		0A000001000000000000002A /* UIImage+Sandbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0000010000000000000134 /* UIImage+Sandbox.swift */; };
 		0A0000010000000000000030 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001301 /* Alamofire */; };
 		0A0000010000000000000031 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001302 /* SnapKit */; };
 		0A0000010000000000000032 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0A0000010000000000001303 /* IQKeyboardManagerSwift */; };
@@ -75,6 +77,8 @@
 		1746C5C12FEF700000305DF9 /* ActivityDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */; };
 		1746C5C32FEF800000305DF9 /* ActivityCreateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */; };
 		1746C5C52FEFA00000305DF9 /* WalletViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C42FEFA00000305DF9 /* WalletViewController.swift */; };
+		1746C5C72FEFB00000305DF9 /* FollowersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C62FEFB00000305DF9 /* FollowersViewController.swift */; };
+		17A8B7F92FF35F3200A8E523 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17A8B7F82FF35F3200A8E523 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,6 +136,8 @@
 		0A0000010000000000000130 /* AppToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppToast.swift; sourceTree = "<group>"; };
 		0A0000010000000000000131 /* AppLoading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLoading.swift; sourceTree = "<group>"; };
 		0A0000010000000000000132 /* EditProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileViewController.swift; sourceTree = "<group>"; };
+		0A0000010000000000000133 /* CurrentCityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentCityProvider.swift; sourceTree = "<group>"; };
+		0A0000010000000000000134 /* UIImage+Sandbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+Sandbox.swift"; sourceTree = "<group>"; };
 		0B0000010000000000000101 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
 		0B0000010000000000000102 /* PersistenceEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEntities.swift; sourceTree = "<group>"; };
 		0B0000010000000000000103 /* PersistenceEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceEnums.swift; sourceTree = "<group>"; };
@@ -166,6 +172,8 @@
 		1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailViewController.swift; sourceTree = "<group>"; };
 		1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityCreateViewController.swift; sourceTree = "<group>"; };
 		1746C5C42FEFA00000305DF9 /* WalletViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletViewController.swift; sourceTree = "<group>"; };
+		1746C5C62FEFB00000305DF9 /* FollowersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowersViewController.swift; sourceTree = "<group>"; };
+		17A8B7F82FF35F3200A8E523 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -176,6 +184,7 @@
 				0A0000010000000000000030 /* Alamofire in Frameworks */,
 				0A0000010000000000000031 /* SnapKit in Frameworks */,
 				0A0000010000000000000032 /* IQKeyboardManagerSwift in Frameworks */,
+				17A8B7F92FF35F3200A8E523 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +211,7 @@
 				0A0000010000000000000602 /* Campa */,
 				0A0000010000000000000607 /* CampaTests */,
 				0A0000010000000000000608 /* CampaUITests */,
+				17A8B7F72FF35F3200A8E523 /* Frameworks */,
 				0A0000010000000000000609 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -359,6 +369,8 @@
 				0A0000010000000000000130 /* AppToast.swift */,
 				0A0000010000000000000131 /* AppLoading.swift */,
 				1746C5B02FED348900305DF9 /* AppInfo.swift */,
+				0A0000010000000000000133 /* CurrentCityProvider.swift */,
+				0A0000010000000000000134 /* UIImage+Sandbox.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -372,6 +384,7 @@
 				0A000001000000000000012F /* ProfileViewModel.swift */,
 				1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */,
 				1746C5BC2FEF500000305DF9 /* FollowViewController.swift */,
+				1746C5C62FEFB00000305DF9 /* FollowersViewController.swift */,
 				1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */,
 				1746C5C42FEFA00000305DF9 /* WalletViewController.swift */,
 				0A0000010000000000000132 /* EditProfileViewController.swift */,
@@ -471,6 +484,14 @@
 				1746C5B52FEF1A6B00305DF9 /* ReportViewController.swift */,
 			);
 			path = Report;
+			sourceTree = "<group>";
+		};
+		17A8B7F72FF35F3200A8E523 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				17A8B7F82FF35F3200A8E523 /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -618,6 +639,8 @@
 				0A000001000000000000001D /* AppFont.swift in Sources */,
 				0A0000010000000000000026 /* AppToast.swift in Sources */,
 				0A0000010000000000000027 /* AppLoading.swift in Sources */,
+				0A0000010000000000000029 /* CurrentCityProvider.swift in Sources */,
+				0A000001000000000000002A /* UIImage+Sandbox.swift in Sources */,
 				0A0000010000000000000028 /* EditProfileViewController.swift in Sources */,
 				0A000001000000000000001A /* MainTabBarController.swift in Sources */,
 				1746C5A92FEBF2BF00305DF9 /* PayAlertController.swift in Sources */,
@@ -664,6 +687,7 @@
 				1746C5B92FEF300000305DF9 /* PostDetailViewController.swift in Sources */,
 				1746C5BB2FEF400000305DF9 /* OtherProfileViewController.swift in Sources */,
 				1746C5BD2FEF500000305DF9 /* FollowViewController.swift in Sources */,
+				1746C5C72FEFB00000305DF9 /* FollowersViewController.swift in Sources */,
 				1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */,
 				1746C5C12FEF700000305DF9 /* ActivityDetailViewController.swift in Sources */,
 				1746C5C32FEF800000305DF9 /* ActivityCreateViewController.swift in Sources */,
@@ -833,11 +857,12 @@
 				CODE_SIGN_ENTITLEMENTS = Campa/Campa.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6NUFR97X3A;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Campa/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Campa;
+				PRODUCT_BUNDLE_IDENTIFIER = app.myfy.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -854,11 +879,12 @@
 				CODE_SIGN_ENTITLEMENTS = Campa/Campa.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6NUFR97X3A;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Campa/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Campa;
+				PRODUCT_BUNDLE_IDENTIFIER = app.myfy.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

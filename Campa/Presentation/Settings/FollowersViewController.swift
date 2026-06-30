@@ -1,6 +1,6 @@
 import UIKit
 
-final class FollowViewController: BaseViewController {
+final class FollowersViewController: BaseViewController {
     private enum Constants {
         static let horizontalInset: CGFloat = 32
         static let rowHeight: CGFloat = 78
@@ -30,7 +30,7 @@ final class FollowViewController: BaseViewController {
         configureNavigation()
         configureTableView()
         configureLayout()
-        loadFollowingUsers()
+        loadFollowerUsers()
     }
 
     override func viewDidLayoutSubviews() {
@@ -42,7 +42,7 @@ final class FollowViewController: BaseViewController {
     private func configureNavigation() {
         view.backgroundColor = Constants.backgroundColor
         changeNavbar(.backTiltle)
-        self.setTitleAndRight(title: NSLocalizedString("Follow", comment: "Follow list title"), right: nil)
+        setTitleAndRight(title: NSLocalizedString("Followers", comment: "Followers list title"), right: nil)
     }
 
     private func configureTableView() {
@@ -52,7 +52,7 @@ final class FollowViewController: BaseViewController {
         tableView.showsVerticalScrollIndicator = false
         tableView.rowHeight = Constants.rowHeight
         tableView.dataSource = self
-        tableView.register(FollowTableViewCell.self, forCellReuseIdentifier: FollowTableViewCell.reuseIdentifier)
+        tableView.register(FollowerTableViewCell.self, forCellReuseIdentifier: FollowerTableViewCell.reuseIdentifier)
 
         view.addSubview(tableView)
     }
@@ -66,7 +66,7 @@ final class FollowViewController: BaseViewController {
         ])
     }
 
-    private func loadFollowingUsers() {
+    private func loadFollowerUsers() {
         guard let currentUser = makeCurrentUser() else {
             users = []
             updateEmptyState()
@@ -74,9 +74,9 @@ final class FollowViewController: BaseViewController {
         }
 
         self.currentUser = currentUser
-        switch userRepository.fetchFollowingUsers(for: currentUser) {
-        case .success(let followingUsers):
-            users = followingUsers
+        switch userRepository.fetchFollowerUsers(for: currentUser) {
+        case .success(let followerUsers):
+            users = followerUsers
         case .failure:
             users = []
         }
@@ -99,17 +99,11 @@ final class FollowViewController: BaseViewController {
         return nil
     }
 
-    private func unfollow(user: User) {
-        guard let currentUser else { return }
+    private func follow(user: User) {
+        guard let currentUser, currentUser.objectID != user.objectID else { return }
 
-        switch userRepository.removeRelation(from: currentUser, to: user, type: .follow) {
-        case .success:
-            users.removeAll { $0.objectID == user.objectID }
-            tableView.reloadData()
-            updateEmptyState()
-        case .failure:
-            break
-        }
+        _ = userRepository.addRelation(from: currentUser, to: user, type: .follow)
+        loadFollowerUsers()
     }
 
     private func updateEmptyState() {
@@ -118,44 +112,44 @@ final class FollowViewController: BaseViewController {
     }
 }
 
-extension FollowViewController: UITableViewDataSource {
+extension FollowersViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         users.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: FollowTableViewCell.reuseIdentifier,
+            withIdentifier: FollowerTableViewCell.reuseIdentifier,
             for: indexPath
-        ) as? FollowTableViewCell else {
+        ) as? FollowerTableViewCell else {
             return UITableViewCell()
         }
 
         let user = users[indexPath.row]
         cell.configure(user: user)
-        cell.onCheckTapped = { [weak self] in
-            self?.unfollow(user: user)
+        cell.onAddTapped = { [weak self] in
+            self?.follow(user: user)
         }
         return cell
     }
 }
 
-private final class FollowTableViewCell: UITableViewCell {
-    static let reuseIdentifier = "FollowTableViewCell"
+private final class FollowerTableViewCell: UITableViewCell {
+    static let reuseIdentifier = "FollowerTableViewCell"
 
     private enum Constants {
         static let horizontalInset: CGFloat = 20
         static let containerInset: CGFloat = 8
         static let avatarSize: CGFloat = 48
-        static let checkButtonWidth: CGFloat = 64
-        static let checkButtonHeight: CGFloat = 38
+        static let addButtonWidth: CGFloat = 64
+        static let addButtonHeight: CGFloat = 38
     }
 
     private let containerView = UIView()
     private let avatarImageView = UIImageView()
     private let nameLabel = UILabel()
-    private let checkButton = UIButton(type: .custom)
-    var onCheckTapped: (() -> Void)?
+    private let addButton = UIButton(type: .custom)
+    var onAddTapped: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -171,12 +165,12 @@ private final class FollowTableViewCell: UITableViewCell {
 
     func configure(user: User) {
         nameLabel.text = user.nickname
-        onCheckTapped = nil
-        avatarImageView.image = UIImage.sandboxOrAssetImage(
-            named: user.avatarLocalPath,
-            documentsSubdirectory: "Avatars",
-            fallbackName: "user_icon"
-        )
+        avatarImageView.image = makeAvatarImage(from: user.avatarLocalPath)
+        onAddTapped = nil
+    }
+
+    private func makeAvatarImage(from avatarLocalPath: String?) -> UIImage? {
+        UIImage.sandboxOrAssetImage(named: avatarLocalPath, documentsSubdirectory: "Avatars", fallbackName: "user_icon")
     }
 
     private func configureViews() {
@@ -198,17 +192,17 @@ private final class FollowTableViewCell: UITableViewCell {
         nameLabel.textColor = UIColor(red: 0.20, green: 0.17, blue: 0.17, alpha: 1.0)
         nameLabel.font = AppFont.medium(size: 16)
 
-        checkButton.translatesAutoresizingMaskIntoConstraints = false
-        checkButton.backgroundColor = .black
-        checkButton.layer.cornerRadius = Constants.checkButtonHeight / 2
-        checkButton.setImage(UIImage(named: "sure"), for: .normal)
-        checkButton.tintColor = UIColor(red: 0.69, green: 0.59, blue: 0.96, alpha: 1.0)
-        checkButton.addTarget(self, action: #selector(handleCheckTapped), for: .touchUpInside)
+        addButton.translatesAutoresizingMaskIntoConstraints = false
+        addButton.backgroundColor = .black
+        addButton.layer.cornerRadius = Constants.addButtonHeight / 2
+        addButton.setImage(UIImage(named: "add_pupor"), for: .normal)
+        addButton.tintColor = UIColor(red: 0.69, green: 0.59, blue: 0.96, alpha: 1.0)
+        addButton.addTarget(self, action: #selector(handleAddTapped), for: .touchUpInside)
 
         contentView.addSubview(containerView)
         containerView.addSubview(avatarImageView)
         containerView.addSubview(nameLabel)
-        containerView.addSubview(checkButton)
+        containerView.addSubview(addButton)
     }
 
     private func configureLayout() {
@@ -225,16 +219,16 @@ private final class FollowTableViewCell: UITableViewCell {
 
             nameLabel.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             nameLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 18),
-            nameLabel.trailingAnchor.constraint(lessThanOrEqualTo: checkButton.leadingAnchor, constant: -12),
+            nameLabel.trailingAnchor.constraint(lessThanOrEqualTo: addButton.leadingAnchor, constant: -12),
 
-            checkButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            checkButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -14),
-            checkButton.widthAnchor.constraint(equalToConstant: Constants.checkButtonWidth),
-            checkButton.heightAnchor.constraint(equalToConstant: Constants.checkButtonHeight)
+            addButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            addButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -14),
+            addButton.widthAnchor.constraint(equalToConstant: Constants.addButtonWidth),
+            addButton.heightAnchor.constraint(equalToConstant: Constants.addButtonHeight)
         ])
     }
 
-    @objc private func handleCheckTapped() {
-        onCheckTapped?()
+    @objc private func handleAddTapped() {
+        onAddTapped?()
     }
 }

@@ -30,11 +30,11 @@ final class PersonalInfoViewController: BaseViewController {
     private let femaleButton = UIButton(type: .custom)
     private let saveButton = UIButton(type: .custom)
     private let datePicker = UIDatePicker()
-    private let countryPicker = UIPickerView()
+    private let universityPicker = UIPickerView()
     private let birthdayFormatter = DateFormatter()
 
     private var selectedGender: PersonalInfoGender
-    private var selectedCountryIndex = 0
+    private var selectedUniversityIndex = 0
     private var selectedAvatarLocalPath: String?
 
     init(
@@ -134,6 +134,8 @@ final class PersonalInfoViewController: BaseViewController {
         birthdayField.inputView = datePicker
         birthdayField.inputAccessoryView = makePickerToolbar(doneAction: #selector(handleBirthdayDone))
         birthdayField.rightIconImage = UIImage(named: "down")
+        birthdayField.isSelectionOnly = true
+        birthdayField.delegate = self
         birthdayField.accessibilityIdentifier = "personalInfoBirthdayField"
 
         datePicker.datePickerMode = .date
@@ -142,13 +144,15 @@ final class PersonalInfoViewController: BaseViewController {
 
         locationField.translatesAutoresizingMaskIntoConstraints = false
         locationField.placeholder = viewModel.locationPlaceholder
-        locationField.inputView = countryPicker
+        locationField.inputView = universityPicker
         locationField.inputAccessoryView = makePickerToolbar(doneAction: #selector(handleLocationDone))
         locationField.rightIconImage = UIImage(named: "down")
+        locationField.isSelectionOnly = true
+        locationField.delegate = self
         locationField.accessibilityIdentifier = "personalInfoLocationField"
 
-        countryPicker.dataSource = self
-        countryPicker.delegate = self
+        universityPicker.dataSource = self
+        universityPicker.delegate = self
     }
 
     private func configureGenderButtons() {
@@ -300,12 +304,12 @@ final class PersonalInfoViewController: BaseViewController {
     }
 
     @objc private func handleLocationDone() {
-        guard !viewModel.countryNames.isEmpty else {
+        guard !viewModel.universityNames.isEmpty else {
             locationField.resignFirstResponder()
             return
         }
 
-        locationField.text = viewModel.countryNames[selectedCountryIndex]
+        locationField.text = viewModel.universityNames[selectedUniversityIndex]
         locationField.resignFirstResponder()
     }
 
@@ -433,22 +437,32 @@ extension PersonalInfoViewController: UIImagePickerControllerDelegate, UINavigat
     }
 }
 
+extension PersonalInfoViewController: UITextFieldDelegate {
+    func textField(
+        _ textField: UITextField,
+        shouldChangeCharactersIn range: NSRange,
+        replacementString string: String
+    ) -> Bool {
+        textField !== birthdayField && textField !== locationField
+    }
+}
+
 extension PersonalInfoViewController: UIPickerViewDataSource, UIPickerViewDelegate {
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
         1
     }
 
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        viewModel.countryNames.count
+        viewModel.universityNames.count
     }
 
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        viewModel.countryNames[row]
+        viewModel.universityNames[row]
     }
 
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        selectedCountryIndex = row
-        locationField.text = viewModel.countryNames[row]
+        selectedUniversityIndex = row
+        locationField.text = viewModel.universityNames[row]
     }
 }
 
@@ -458,6 +472,7 @@ private final class PersonalInfoTextField: UITextField {
             configureRightView()
         }
     }
+    var isSelectionOnly = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -480,6 +495,18 @@ private final class PersonalInfoTextField: UITextField {
 
     override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
         textRect(forBounds: bounds)
+    }
+
+    override func caretRect(for position: UITextPosition) -> CGRect {
+        isSelectionOnly ? .zero : super.caretRect(for: position)
+    }
+
+    override func selectionRects(for range: UITextRange) -> [UITextSelectionRect] {
+        isSelectionOnly ? [] : super.selectionRects(for: range)
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        isSelectionOnly ? false : super.canPerformAction(action, withSender: sender)
     }
 
     private var textInsets: UIEdgeInsets {
@@ -506,10 +533,16 @@ private final class PersonalInfoTextField: UITextField {
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = UIColor(red: 0.82, green: 0.94, blue: 0.24, alpha: 1.0)
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 38, height: 24))
+        container.isUserInteractionEnabled = true
+        container.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleRightIconTapped)))
         imageView.frame = CGRect(x: 8, y: 7, width: 12, height: 10)
         container.addSubview(imageView)
         rightView = container
         rightViewMode = .always
+    }
+
+    @objc private func handleRightIconTapped() {
+        becomeFirstResponder()
     }
 
     override var placeholder: String? {

@@ -1,3 +1,4 @@
+import Security
 import StoreKit
 import UIKit
 
@@ -16,6 +17,7 @@ final class WalletViewController: BaseViewController {
     private let balanceLabel = UILabel()
     private let headerBackgroundImageView = UIImageView()
     private let collectionView: UICollectionView
+    private let userRepository: UserRepository
     private var selectedProductIndex = 0
     private var storeProducts: [String: StoreKit.Product] = [:]
 
@@ -28,7 +30,8 @@ final class WalletViewController: BaseViewController {
         WalletProduct(productId: "ymohxnvpkqxutvab", amount: "10800", price: "$19.99")
     ]
 
-    init() {
+    init(userRepository: UserRepository = UserRepository()) {
+        self.userRepository = userRepository
         let layout = UICollectionViewFlowLayout()
         layout.minimumLineSpacing = 14
         layout.minimumInteritemSpacing = 14
@@ -49,6 +52,13 @@ final class WalletViewController: BaseViewController {
         configureHeader()
         configureProducts()
         configureLayout()
+        updateBalance()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        updateBalance()
     }
 
     private func configureView() {
@@ -78,7 +88,7 @@ final class WalletViewController: BaseViewController {
         balanceIconView.contentMode = .scaleAspectFit
 
         balanceLabel.translatesAutoresizingMaskIntoConstraints = false
-        balanceLabel.text = "999"
+        balanceLabel.text = "0"
         balanceLabel.font = AppFont.bold(size: 16)
         balanceLabel.textColor = Constants.darkTextColor
 
@@ -133,7 +143,7 @@ final class WalletViewController: BaseViewController {
         do {
             let storeProduct = try await loadStoreProduct(productId: product.productId)
             let result = try await storeProduct.purchase()
-            handlePurchaseResult(result)
+            handlePurchaseResult(result, product: product)
         } catch {
             AppToast.show(message: NSLocalizedString("Failed to start purchase.", comment: "Purchase start failure toast"), in: view)
         }
@@ -154,15 +164,18 @@ final class WalletViewController: BaseViewController {
     }
 
     @MainActor
-    private func handlePurchaseResult(_ result: StoreKit.Product.PurchaseResult) {
+    private func handlePurchaseResult(_ result: StoreKit.Product.PurchaseResult, product: WalletProduct) {
         switch result {
         case .success(let verificationResult):
             switch verificationResult {
             case .verified(let transaction):
+                let didSaveBalance = addBalance(for: product)
                 Task {
                     await transaction.finish()
                 }
-                AppToast.show(message: NSLocalizedString("Purchase successful.", comment: "Purchase success toast"), in: view)
+                if didSaveBalance {
+                    AppToast.show(message: NSLocalizedString("Purchase successful.", comment: "Purchase success toast"), in: view)
+                }
             case .unverified:
                 AppToast.show(message: NSLocalizedString("Purchase verification failed.", comment: "Purchase verification failure toast"), in: view)
             }
@@ -173,6 +186,43 @@ final class WalletViewController: BaseViewController {
         @unknown default:
             AppToast.show(message: NSLocalizedString("Purchase failed.", comment: "Purchase unknown failure toast"), in: view)
         }
+    }
+
+    private func addBalance(for product: WalletProduct) -> Bool {
+        guard let walletKey = currentWalletKey() else {
+            AppToast.show(message: NSLocalizedString("Failed to save balance.", comment: "Wallet balance save failure toast"), in: view)
+            return false
+        }
+        guard let amount = Int(product.amount) else {
+            AppToast.show(message: NSLocalizedString("Failed to save balance.", comment: "Wallet balance save failure toast"), in: view)
+            return false
+        }
+
+        guard WalletKeychainStore.add(amount, for: walletKey) else {
+            AppToast.show(message: NSLocalizedString("Failed to save balance.", comment: "Wallet balance save failure toast"), in: view)
+            return false
+        }
+
+        updateBalance()
+        return true
+    }
+
+    private func updateBalance() {
+        guard let walletKey = currentWalletKey() else {
+            balanceLabel.text = "0"
+            return
+        }
+
+        balanceLabel.text = "\(WalletKeychainStore.balance(for: walletKey))"
+    }
+
+    private func currentWalletKey() -> String? {
+        guard let userId = UserDefaults.standard.string(forKey: CurrentUserIdKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !userId.isEmpty else {
+            return nil
+        }
+        return "wallet.\(userId)"
     }
 }
 
@@ -198,6 +248,10 @@ extension WalletViewController: UICollectionViewDataSource, UICollectionViewDele
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard guardRegisteredUser() else {
+            return
+        }
+
         if selectedProductIndex != indexPath.item {
             let oldIndexPath = IndexPath(item: selectedProductIndex, section: 0)
             selectedProductIndex = indexPath.item
@@ -220,6 +274,51 @@ extension WalletViewController: UICollectionViewDataSource, UICollectionViewDele
     }
 }
 
+private extension WalletViewController {
+    func guardRegisteredUser() -> Bool {
+        guard let user = loadCurrentUser(), !isGuestUser(user) else {
+            AppToast.show(message: NSLocalizedString("Please login first.", comment: "Guest purchase login toast"), in: view)
+            showLogin()
+            return false
+        }
+        return true
+    }
+
+    func loadCurrentUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId) {
+            return user
+        }
+
+        guard case .success(let user) = userRepository.fetchCurrentUser() else {
+            return nil
+        }
+        return user
+    }
+
+    func isGuestUser(_ user: User) -> Bool {
+        if let guestUserId = UserDefaults.standard.string(forKey: GuestUserIdKey),
+           guestUserId == user.id.uuidString {
+            return true
+        }
+
+        return user.email?.lowercased().hasSuffix("@guest.campa") == true
+    }
+
+    func showLogin() {
+        UserDefaults.standard.removeObject(forKey: CurrentUserIdKey)
+
+        guard let window = view.window else {
+            navigationController?.pushViewController(AuthEntryViewController(), animated: true)
+            return
+        }
+
+        window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
+        window.makeKeyAndVisible()
+    }
+}
+
 private struct WalletProduct {
     let productId: String
     let amount: String
@@ -228,6 +327,82 @@ private struct WalletProduct {
 
 private enum WalletPurchaseError: Error {
     case productNotFound
+}
+
+enum WalletKeychainStore {
+    private static let service = "com.campa.wallet.amount"
+
+    static func balance(for key: String) -> Int {
+        integer(for: key)
+    }
+
+    static func add(_ amount: Int, for key: String) -> Bool {
+        guard amount >= 0 else { return false }
+        return setInteger(integer(for: key) + amount, for: key)
+    }
+
+    static func deduct(_ amount: Int, for key: String) -> Bool {
+        guard amount >= 0 else { return false }
+        let currentAmount = integer(for: key)
+        guard currentAmount >= amount else { return false }
+        return setInteger(currentAmount - amount, for: key)
+    }
+
+    static func integer(for key: String) -> Int {
+        guard let value = string(for: key), let integer = Int(value) else {
+            return 0
+        }
+        return integer
+    }
+
+    static func setInteger(_ value: Int, for key: String) -> Bool {
+        setString("\(value)", for: key)
+    }
+
+    private static func string(for key: String) -> String? {
+        var query = baseQuery(for: key)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func setString(_ value: String, for key: String) -> Bool {
+        guard let data = value.data(using: .utf8) else {
+            return false
+        }
+
+        let query = baseQuery(for: key)
+        let attributes: [String: Any] = [
+            kSecValueData as String: data
+        ]
+        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+        if updateStatus == errSecSuccess {
+            return true
+        }
+
+        guard updateStatus == errSecItemNotFound else {
+            return false
+        }
+
+        var addQuery = query
+        addQuery[kSecValueData as String] = data
+        return SecItemAdd(addQuery as CFDictionary, nil) == errSecSuccess
+    }
+
+    private static func baseQuery(for key: String) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key
+        ]
+    }
 }
 
 private final class WalletProductCell: UICollectionViewCell {

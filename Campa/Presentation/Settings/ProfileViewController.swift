@@ -23,6 +23,7 @@ final class ProfileViewController: BaseViewController {
     private let locationLabel = UILabel()
     private let statsStackView = UIStackView()
     private let followingCountLabel = UILabel()
+    private let followersCountLabel = UILabel()
     private let postsCountLabel = UILabel()
     private let postCardView = UIView()
     private let postAvatarImageView = UIImageView()
@@ -62,12 +63,14 @@ final class ProfileViewController: BaseViewController {
         configureProfilePanel()
         configurePostCard()
         configureLayout()
+        updateCurrentCity()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         loadCurrentUserProfile()
+        updateCurrentCity()
     }
 
     override func rightAction() {
@@ -139,6 +142,12 @@ final class ProfileViewController: BaseViewController {
                 count: viewModel.followingCount,
                 title: viewModel.followingTitle,
                 action: #selector(handleFollowingTapped)
+            ),
+            makeStatView(
+                countLabel: followersCountLabel,
+                count: viewModel.followersCount,
+                title: viewModel.followersTitle,
+                action: #selector(handleFollowersTapped)
             ),
             makeStatView(countLabel: postsCountLabel, count: viewModel.postsCount, title: viewModel.postsTitle)
         ].forEach(statsStackView.addArrangedSubview)
@@ -368,6 +377,12 @@ final class ProfileViewController: BaseViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
 
+    @objc private func handleFollowersTapped() {
+        let vc = FollowersViewController()
+        vc.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
     private func makeThumbnailView(color: UIColor) -> UIView {
         let view = UIView()
         view.backgroundColor = color
@@ -395,6 +410,12 @@ final class ProfileViewController: BaseViewController {
             viewModel.followingCount = "0"
         }
 
+        if case .success(let followersCount) = userRepository.countFollowersUsers(for: user) {
+            viewModel.followersCount = "\(followersCount)"
+        } else {
+            viewModel.followersCount = "0"
+        }
+
         if case .success(let postsCount) = postRepository.countPosts(for: user) {
             viewModel.postsCount = "\(postsCount)"
         } else {
@@ -402,13 +423,13 @@ final class ProfileViewController: BaseViewController {
         }
 
         followingCountLabel.text = viewModel.followingCount
+        followersCountLabel.text = viewModel.followersCount
         postsCountLabel.text = viewModel.postsCount
     }
 
     private func apply(user: User) {
         nameLabel.text = user.nickname
         schoolLabel.text = user.school ?? viewModel.school
-        locationLabel.text = user.location ?? viewModel.location
         postNameLabel.text = user.nickname
 
         let avatarImage = makeAvatarImage(from: user.avatarLocalPath)
@@ -417,21 +438,17 @@ final class ProfileViewController: BaseViewController {
         postAvatarImageView.image = avatarImage
     }
 
+    private func updateCurrentCity() {
+        CurrentCityProvider.shared.requestCurrentCity { [weak self] city in
+            guard let self, let city else { return }
+            DispatchQueue.main.async {
+                self.locationLabel.text = city
+            }
+        }
+    }
+
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
-        guard let value = cleanedText(storedPath) else {
-            return defaultAvatarImage()
-        }
-
-        let avatarURL: URL?
-        if value.hasPrefix("/") {
-            avatarURL = URL(fileURLWithPath: value)
-        } else {
-            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(value)
-        }
-
-        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: value) ?? defaultAvatarImage()
+        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars") ?? defaultAvatarImage()
     }
 
     private func defaultAvatarImage() -> UIImage? {
@@ -505,27 +522,8 @@ final class ProfileViewController: BaseViewController {
         }
 
         return postImages.compactMap { image in
-            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) }
+            UIImage.sandboxOrAssetImage(named: image.localPath, documentsSubdirectory: "PostImages")
         }
-    }
-
-    private func postImageURL(for storedPath: String) -> URL? {
-        let value = storedPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else {
-            return nil
-        }
-
-        if value.hasPrefix("/") {
-            return URL(fileURLWithPath: value)
-        }
-
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-
-        return documentsURL
-            .appendingPathComponent("PostImages", isDirectory: true)
-            .appendingPathComponent(value)
     }
 
     private func makeRelativeTime(from date: Date) -> String {

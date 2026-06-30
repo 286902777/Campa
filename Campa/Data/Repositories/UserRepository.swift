@@ -233,6 +233,26 @@ final class UserRepository {
         }
     }
 
+    func fetchFollowerUsers(for user: User) -> Result<[User], PersistenceError> {
+        let request = UserRelation.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "targetUser == %@ AND type == %@",
+            user,
+            UserRelationType.follow.rawValue
+        )
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "createdAt", ascending: false)
+        ]
+
+        do {
+            let relations = try context.fetch(request)
+            let users = relations.compactMap { $0.sourceUser }
+            return .success(users)
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
     func countFollowingUsers(for user: User) -> Result<Int, PersistenceError> {
         let request = UserRelation.fetchRequest()
         request.predicate = NSPredicate(

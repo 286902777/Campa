@@ -6,6 +6,7 @@ final class PostViewController: BaseViewController {
         static let purpleColor = UIColor(red: 0.72, green: 0.62, blue: 0.97, alpha: 1.0)
         static let darkTextColor = UIColor(red: 0.28, green: 0.02, blue: 0.02, alpha: 1.0)
         static let horizontalInset: CGFloat = 24
+        static let publishCost = 300
     }
 
     private let titleLabel = UILabel()
@@ -253,9 +254,28 @@ final class PostViewController: BaseViewController {
             return
         }
 
+        guard !isGuestUser(currentUser) else {
+            showToast(message: NSLocalizedString("Please login first.", comment: "Guest publish login toast"))
+            showLogin()
+            return
+        }
+
+        let walletKey = makeWalletKey(for: currentUser)
+        guard WalletKeychainStore.balance(for: walletKey) >= Constants.publishCost else {
+            showToast(message: NSLocalizedString("Insufficient balance", comment: "Post insufficient wallet balance toast"))
+            showWallet()
+            return
+        }
+
         let imagePaths = selectedImages.compactMap(savePostImage)
         guard imagePaths.count == selectedImages.count else {
             showToast(message: NSLocalizedString("Failed to save post images", comment: "Post image save failed toast"))
+            return
+        }
+
+        guard WalletKeychainStore.deduct(Constants.publishCost, for: walletKey) else {
+            showToast(message: NSLocalizedString("Insufficient balance", comment: "Post insufficient wallet balance toast"))
+            showWallet()
             return
         }
 
@@ -275,7 +295,44 @@ final class PostViewController: BaseViewController {
                 self?.dismiss(animated: true)
             }
         case .failure:
+            _ = WalletKeychainStore.add(Constants.publishCost, for: walletKey)
             showToast(message: NSLocalizedString("Failed to publish post", comment: "Post publish failed toast"))
+        }
+    }
+
+    private func makeWalletKey(for user: User) -> String {
+        "wallet.\(user.id.uuidString)"
+    }
+
+    private func showWallet() {
+        let viewController = WalletViewController()
+        viewController.hidesBottomBarWhenPushed = true
+        if let navigationController {
+            navigationController.pushViewController(viewController, animated: true)
+        } else {
+            present(UINavigationController(rootViewController: viewController), animated: true)
+        }
+    }
+
+    private func isGuestUser(_ user: User) -> Bool {
+        if let guestUserId = UserDefaults.standard.string(forKey: GuestUserIdKey),
+           guestUserId == user.id.uuidString {
+            return true
+        }
+
+        return user.email?.lowercased().hasSuffix("@guest.campa") == true
+    }
+
+    private func showLogin() {
+        UserDefaults.standard.removeObject(forKey: CurrentUserIdKey)
+
+        guard let window = view.window else {
+            navigationController?.pushViewController(AuthEntryViewController(), animated: true)
+            return
+        }
+
+        UIView.transition(with: window, duration: 0.25, options: .transitionCrossDissolve) {
+            window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
         }
     }
 

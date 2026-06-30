@@ -167,14 +167,11 @@ final class EditProfileViewController: BaseViewController {
     }
 
     private func updateAvatarImage() {
-        guard let currentAvatarLocalPath,
-              let avatarURL = avatarFileURL(for: currentAvatarLocalPath),
-              let image = UIImage(contentsOfFile: avatarURL.path) else {
-            avatarImageView.image = UIImage(named: "user_icon")
-            return
-        }
-
-        avatarImageView.image = image
+        avatarImageView.image = UIImage.sandboxOrAssetImage(
+            named: currentAvatarLocalPath,
+            documentsSubdirectory: "Avatars",
+            fallbackName: "user_icon"
+        )
     }
 
     @objc private func handleAvatarTapped() {

@@ -313,27 +313,18 @@ final class ActivityDetailViewController: BaseViewController {
         }
 
         let loadedImages = activityImages.compactMap { image in
-            activityImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: image.localPath)
+            UIImage.sandboxOrAssetImage(named: image.localPath, documentsSubdirectory: "ActivityImages")
         }
         return loadedImages.isEmpty ? ["build", "build_sel", "photo"].compactMap { UIImage(named: $0) } : loadedImages
     }
 
     private func makeImages(from displayData: ActivityDetailData) -> [UIImage] {
         let pathImages = displayData.imagePaths.compactMap {
-            activityImageURL(for: $0).flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: $0)
+            UIImage.sandboxOrAssetImage(named: $0, documentsSubdirectory: "ActivityImages")
         }
         let assetImages = pathImages.isEmpty ? displayData.imageNames.compactMap { UIImage(named: $0) } : []
         let loadedImages = pathImages + assetImages
         return loadedImages.isEmpty ? ["build", "build_sel", "photo"].compactMap { UIImage(named: $0) } : loadedImages
-    }
-
-    private func activityImageURL(for storedPath: String) -> URL? {
-        let value = storedPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return nil }
-        if value.hasPrefix("/") { return URL(fileURLWithPath: value) }
-        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("ActivityImages", isDirectory: true)
-            .appendingPathComponent(value)
     }
 }
 

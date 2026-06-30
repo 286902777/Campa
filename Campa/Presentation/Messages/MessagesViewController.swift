@@ -301,20 +301,7 @@ final class MessagesViewController: BaseViewController {
     }
 
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
-        guard let storedPath = cleanedText(storedPath) else {
-            return UIImage(named: "user_icon")
-        }
-
-        let avatarURL: URL?
-        if storedPath.hasPrefix("/") {
-            avatarURL = URL(fileURLWithPath: storedPath)
-        } else {
-            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(storedPath)
-        }
-
-        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: "user_icon")
+        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars", fallbackName: "user_icon")
     }
 
     private func resolveConversationIfNeeded() {

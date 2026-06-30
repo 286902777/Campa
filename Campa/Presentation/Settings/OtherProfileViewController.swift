@@ -414,35 +414,12 @@ final class OtherProfileViewController: BaseViewController {
         }
 
         return postImages.compactMap { image in
-            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: image.localPath)
+            UIImage.sandboxOrAssetImage(named: image.localPath, documentsSubdirectory: "PostImages")
         }
-    }
-
-    private func postImageURL(for storedPath: String) -> URL? {
-        let value = storedPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return nil }
-        if value.hasPrefix("/") { return URL(fileURLWithPath: value) }
-        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("PostImages", isDirectory: true)
-            .appendingPathComponent(value)
     }
 
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
-        let value = storedPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !value.isEmpty else {
-            return defaultAvatarImage()
-        }
-
-        let avatarURL: URL?
-        if value.hasPrefix("/") {
-            avatarURL = URL(fileURLWithPath: value)
-        } else {
-            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(value)
-        }
-
-        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: value) ?? defaultAvatarImage()
+        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars") ?? defaultAvatarImage()
     }
 
     private func defaultAvatarImage() -> UIImage? {

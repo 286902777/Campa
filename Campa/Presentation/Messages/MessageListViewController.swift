@@ -10,6 +10,7 @@ final class MessageListViewController: BaseViewController {
 
     private let viewModel: MessageListViewModel
     private let chatRepository: ChatRepository
+    private let userRepository: UserRepository
     private var conversations: [ChatConversation] = []
     private var messages: [MessageListItem] = []
     private let tableView = UITableView(frame: .zero, style: .plain)
@@ -18,10 +19,12 @@ final class MessageListViewController: BaseViewController {
 
     init(
         viewModel: MessageListViewModel = MessageListViewModel(),
-        chatRepository: ChatRepository = ChatRepository()
+        chatRepository: ChatRepository = ChatRepository(),
+        userRepository: UserRepository = UserRepository()
     ) {
         self.viewModel = viewModel
         self.chatRepository = chatRepository
+        self.userRepository = userRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -97,7 +100,8 @@ final class MessageListViewController: BaseViewController {
     }
 
     private func loadConversations() {
-        guard case .success(let conversations) = chatRepository.fetchConversations() else {
+        guard let currentUser = loadCurrentUser(),
+              case .success(let conversations) = chatRepository.fetchConversationsWithMessages(for: currentUser) else {
             self.conversations = []
             messages = []
             tableView.reloadData()
@@ -114,6 +118,19 @@ final class MessageListViewController: BaseViewController {
         }
     }
 
+    private func loadCurrentUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId) {
+            return user
+        }
+
+        guard case .success(let user) = userRepository.fetchCurrentUser() else {
+            return nil
+        }
+        return user
+    }
+
     private func updateEmptyState() {
         let isEmpty = messages.isEmpty
         tableView.isHidden = isEmpty
@@ -125,7 +142,7 @@ final class MessageListViewController: BaseViewController {
         let sentDate = conversation.lastMessageAt ?? conversation.updatedAt
         return MessageListItem(
             name: cleanedText(conversation.title) ?? cleanedText(displayUser?.nickname) ?? NSLocalizedString("Unknown", comment: "Unknown message sender"),
-            preview: cleanedText(conversation.lastMessageText) ?? NSLocalizedString("No messages yet", comment: "Empty conversation preview"),
+            preview: cleanedText(conversation.lastMessageText) ?? "",
             time: makeTimeText(from: sentDate),
             unreadCount: conversation.unreadCount > 0 ? Int(conversation.unreadCount) : nil,
             avatarImage: makeAvatarImage(from: displayUser?.avatarLocalPath)
@@ -160,24 +177,7 @@ final class MessageListViewController: BaseViewController {
     }
 
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
-        guard let storedPath = cleanedText(storedPath) else {
-            return UIImage(named: "user_icon")
-        }
-
-        let avatarURL: URL?
-        if storedPath.hasPrefix("/") {
-            avatarURL = URL(fileURLWithPath: storedPath)
-        } else {
-            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(storedPath)
-        }
-
-        guard let avatarURL,
-              let image = UIImage(contentsOfFile: avatarURL.path) else {
-            return UIImage(named: "user_icon")
-        }
-        return image
+        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars", fallbackName: "user_icon")
     }
 
     private func cleanedText(_ text: String?) -> String? {

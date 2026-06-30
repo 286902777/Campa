@@ -149,9 +149,8 @@ final class LoginViewController: BaseViewController {
             return
         }
 
-        UIView.transition(with: window, duration: 0.25, options: .transitionCrossDissolve) {
-            window.rootViewController = MainTabBarController()
-        }
+        window.rootViewController = MainTabBarController()
+        window.makeKeyAndVisible()
     }
 
     private func showToast(message: String) {

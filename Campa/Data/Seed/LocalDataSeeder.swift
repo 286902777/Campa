@@ -5,10 +5,11 @@ final class LocalDataSeeder {
     static let shared = LocalDataSeeder()
 
     private enum Constants {
-        static let seedVersion = 2
+        static let seedVersion = 3
         static let seedVersionKey = "localDataSeedVersion"
         static let seedMarkerEmail = "maxwell@local.campa"
         static let defaultPasswordHash = "local-seed-password"
+        static let testPasswordHash = "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
     }
 
     private let context: NSManagedObjectContext
@@ -31,7 +32,7 @@ final class LocalDataSeeder {
             let user = fetchUser(email: item.email) ?? User(context: context)
             user.id = item.id
             user.email = item.email
-            user.passwordHash = Constants.defaultPasswordHash
+            user.passwordHash = item.passwordHash ?? Constants.defaultPasswordHash
             user.nickname = item.name
             user.avatarLocalPath = item.avatar
             user.school = item.location
@@ -179,7 +180,15 @@ final class LocalDataSeeder {
             SeedUser(id: UUID(uuidString: "10000000-0000-0000-0000-000000000003")!, name: "Roman", email: "roman@local.campa", avatar: "a3", location: "Sogang University"),
             SeedUser(id: UUID(uuidString: "10000000-0000-0000-0000-000000000004")!, name: "Olivia", email: "olivia@local.campa", avatar: "a4", location: "Hanyang University"),
             SeedUser(id: UUID(uuidString: "10000000-0000-0000-0000-000000000005")!, name: "Gabriella", email: "gabriella@local.campa", avatar: "a5", location: "Chung-Ang University"),
-            SeedUser(id: UUID(uuidString: "10000000-0000-0000-0000-000000000006")!, name: "Holly", email: "holly@local.campa", avatar: "a6", location: "Yonsei University")
+            SeedUser(id: UUID(uuidString: "10000000-0000-0000-0000-000000000006")!, name: "Holly", email: "holly@local.campa", avatar: "a6", location: "Yonsei University"),
+            SeedUser(
+                id: UUID(uuidString: "10000000-0000-0000-0000-000000000007")!,
+                name: "Campa Test",
+                email: "campa_test@gmail.com",
+                avatar: "muser",
+                location: "Yonsei University",
+                passwordHash: Constants.testPasswordHash
+            )
         ]
     }
 
@@ -213,6 +222,7 @@ private struct SeedUser {
     let email: String
     let avatar: String
     let location: String
+    var passwordHash: String? = nil
 }
 
 private struct SeedPost {

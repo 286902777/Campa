@@ -44,6 +44,7 @@ final class CampusViewController: BaseViewController {
         configureTableView()
         configureLayout()
         configureNotification()
+        updateCurrentCity()
         loadActivities()
     }
 
@@ -67,7 +68,7 @@ final class CampusViewController: BaseViewController {
         locationIconView.contentMode = .scaleAspectFit
 
         locationLabel.translatesAutoresizingMaskIntoConstraints = false
-        locationLabel.text = NSLocalizedString("Seoul, Korea", comment: "Campus location")
+        locationLabel.text = NSLocalizedString("Current City", comment: "Current city placeholder")
         locationLabel.font = AppFont.medium(size: 10)
         locationLabel.textColor = Constants.darkTextColor
 
@@ -185,6 +186,15 @@ final class CampusViewController: BaseViewController {
 
     @objc private func handleActivityDidPublish() {
         loadActivities()
+    }
+
+    private func updateCurrentCity() {
+        CurrentCityProvider.shared.requestCurrentCity { [weak self] city in
+            guard let self, let city else { return }
+            DispatchQueue.main.async {
+                self.locationLabel.text = city
+            }
+        }
     }
 
     private func loadActivities() {
@@ -329,20 +339,7 @@ private final class CampusActivityTableViewCell: UITableViewCell {
     }
 
     private func makeActivityImage(from imagePath: String?) -> UIImage? {
-        guard let imagePath = imagePath?.trimmingCharacters(in: .whitespacesAndNewlines), !imagePath.isEmpty else {
-            return nil
-        }
-
-        let imageURL: URL?
-        if imagePath.hasPrefix("/") {
-            imageURL = URL(fileURLWithPath: imagePath)
-        } else {
-            imageURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("ActivityImages", isDirectory: true)
-                .appendingPathComponent(imagePath)
-        }
-
-        return imageURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: imagePath)
+        UIImage.sandboxOrAssetImage(named: imagePath, documentsSubdirectory: "ActivityImages")
     }
 
     private func configureViews() {

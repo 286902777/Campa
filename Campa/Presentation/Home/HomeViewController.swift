@@ -338,43 +338,12 @@ final class HomeViewController: BaseViewController {
         }
 
         return postImages.compactMap { image in
-            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: image.localPath)
+            UIImage.sandboxOrAssetImage(named: image.localPath, documentsSubdirectory: "PostImages")
         }
-    }
-
-    private func postImageURL(for storedPath: String) -> URL? {
-        let value = storedPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else {
-            return nil
-        }
-
-        if value.hasPrefix("/") {
-            return URL(fileURLWithPath: value)
-        }
-
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        return documentsURL
-            .appendingPathComponent("PostImages", isDirectory: true)
-            .appendingPathComponent(value)
     }
 
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
-        guard let storedPath = cleanedText(storedPath) else {
-            return UIImage(named: "user_icon")
-        }
-
-        let avatarURL: URL?
-        if storedPath.hasPrefix("/") {
-            avatarURL = URL(fileURLWithPath: storedPath)
-        } else {
-            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(storedPath)
-        }
-
-        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: storedPath) ?? UIImage(named: "user_icon")
+        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars", fallbackName: "user_icon")
     }
 
     private func makeRelativeTime(from date: Date) -> String {

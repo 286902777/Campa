@@ -3,9 +3,9 @@ import Foundation
 final class ProfileViewModel {
     let name = NSLocalizedString("Nicki Mullins", comment: "Profile name")
     let school = NSLocalizedString("Yonsei University", comment: "Profile school")
-    let location = NSLocalizedString("Seoul, Korea", comment: "Profile location")
+    let location = NSLocalizedString("Current City", comment: "Current city placeholder")
     var followingCount = "0"
-    let followersCount = "336"
+    var followersCount = "0"
     var postsCount = "0"
     let followingTitle = NSLocalizedString("Following", comment: "Following count title")
     let followersTitle = NSLocalizedString("Followers", comment: "Followers count title")

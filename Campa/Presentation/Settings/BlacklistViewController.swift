@@ -174,21 +174,11 @@ private final class BlacklistTableViewCell: UITableViewCell {
     func configure(user: User) {
         nameLabel.text = user.nickname
         onRevokeTapped = nil
-
-        if let avatar = user.avatarLocalPath,
-           let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let filePath = documentsURL
-                .appendingPathComponent("Avatars", isDirectory: true)
-                .appendingPathComponent(avatar)
-                .path
-            if FileManager.default.fileExists(atPath: filePath) {
-                avatarImageView.image = UIImage(contentsOfFile:  filePath)
-            } else {
-                avatarImageView.image = UIImage(named: avatar)
-            }
-        } else {
-            avatarImageView.image = UIImage(named: "user_icon")
-        }
+        avatarImageView.image = UIImage.sandboxOrAssetImage(
+            named: user.avatarLocalPath,
+            documentsSubdirectory: "Avatars",
+            fallbackName: "user_icon"
+        )
     }
 
     private func configureViews() {

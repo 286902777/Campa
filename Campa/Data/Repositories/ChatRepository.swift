@@ -70,6 +70,19 @@ final class ChatRepository {
         }
     }
 
+    func fetchConversationsWithMessages(for user: User) -> Result<[ChatConversation], PersistenceError> {
+        switch fetchConversations() {
+        case .success(let conversations):
+            let filteredConversations = conversations.filter { conversation in
+                let participantIds = Set(conversation.participants?.compactMap(\.user?.id) ?? [])
+                return participantIds.contains(user.id) && hasMessages(in: conversation)
+            }
+            return .success(filteredConversations)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
     func fetchPrivateConversation(between currentUser: User, and receiver: User) -> Result<ChatConversation?, PersistenceError> {
         let request = ChatConversation.fetchRequest()
         request.predicate = NSPredicate(format: "type == %@", ChatConversationType.private.rawValue)
@@ -96,6 +109,13 @@ final class ChatRepository {
         } catch {
             return .failure(.coreDataSaveFailed)
         }
+    }
+
+    private func hasMessages(in conversation: ChatConversation) -> Bool {
+        let request = ChatMessage.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "conversation == %@", conversation)
+        return ((try? context.count(for: request)) ?? 0) > 0
     }
 
     private func saveAndReturn<T>(_ object: T) -> Result<T, PersistenceError> {
