@@ -305,6 +305,10 @@ final class UserRepository {
 
     func addRelation(from sourceUser: User, to targetUser: User, type: UserRelationType) -> Result<UserRelation, PersistenceError> {
         if case .success(true) = hasRelation(from: sourceUser, to: targetUser, type: type) {
+            if type == .block {
+                removeFollowRelationsBetween(sourceUser, and: targetUser)
+                NotificationCenter.default.post(name: .userBlockRelationDidChange, object: nil)
+            }
             return .failure(.duplicateRelation)
         }
 
@@ -318,6 +322,10 @@ final class UserRepository {
         let result = saveAndReturn(relation)
         if case .success = result, type == .follow {
             NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
+        }
+        if case .success = result, type == .block {
+            removeFollowRelationsBetween(sourceUser, and: targetUser)
+            NotificationCenter.default.post(name: .userBlockRelationDidChange, object: nil)
         }
         return result
     }
@@ -338,6 +346,9 @@ final class UserRepository {
                 try context.save()
                 if type == .follow {
                     NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
+                }
+                if type == .block {
+                    NotificationCenter.default.post(name: .userBlockRelationDidChange, object: nil)
                 }
             }
             return .success(())
@@ -360,6 +371,31 @@ final class UserRepository {
             return .success(try context.count(for: request) > 0)
         } catch {
             return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    private func removeFollowRelationsBetween(_ firstUser: User, and secondUser: User) {
+        let request = UserRelation.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "type == %@ AND ((sourceUser == %@ AND targetUser == %@) OR (sourceUser == %@ AND targetUser == %@))",
+            UserRelationType.follow.rawValue,
+            firstUser,
+            secondUser,
+            secondUser,
+            firstUser
+        )
+
+        do {
+            let relations = try context.fetch(request)
+            guard !relations.isEmpty else {
+                return
+            }
+
+            relations.forEach(context.delete)
+            try context.save()
+            NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
+        } catch {
+            context.rollback()
         }
     }
 

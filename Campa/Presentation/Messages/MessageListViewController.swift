@@ -37,9 +37,14 @@ final class MessageListViewController: BaseViewController {
         super.viewDidLoad()
 
         configureView()
+        configureNotifications()
         configureMessages()
         configureLayout()
         loadConversations()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -83,6 +88,21 @@ final class MessageListViewController: BaseViewController {
         view.addSubview(emptyView)
     }
 
+    private func configureNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserRelationDidChange),
+            name: .userFollowRelationDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserRelationDidChange),
+            name: .userBlockRelationDidChange,
+            object: nil
+        )
+    }
+
     private func configureLayout() {
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 27),
@@ -109,13 +129,24 @@ final class MessageListViewController: BaseViewController {
             return
         }
 
-        self.conversations = conversations
+        let mutualFollowConversations = conversations.filter { conversation in
+            guard let displayUser = makeDisplayUser(from: conversation, currentUserId: currentUser.id) else {
+                return false
+            }
+            return isMutualFollow(between: currentUser, and: displayUser)
+        }
+
+        self.conversations = mutualFollowConversations
         AppLoading.show(in: self.view) { [weak self] in
             guard let self = self else { return }
-            self.messages = conversations.map(self.makeMessageItem(from:))
+            self.messages = mutualFollowConversations.map(self.makeMessageItem(from:))
             self.tableView.reloadData()
             self.updateEmptyState()
         }
+    }
+
+    @objc private func handleUserRelationDidChange() {
+        loadConversations()
     }
 
     private func loadCurrentUser() -> User? {
@@ -150,7 +181,10 @@ final class MessageListViewController: BaseViewController {
     }
 
     private func makeDisplayUser(from conversation: ChatConversation) -> User? {
-        let currentUserId = currentUserId()
+        return makeDisplayUser(from: conversation, currentUserId: currentUserId())
+    }
+
+    private func makeDisplayUser(from conversation: ChatConversation, currentUserId: UUID?) -> User? {
         let users = conversation.participants?
             .compactMap(\.user)
             .sorted { $0.nickname < $1.nickname } ?? []
@@ -160,6 +194,15 @@ final class MessageListViewController: BaseViewController {
             return otherUser
         }
         return users.first
+    }
+
+    private func isMutualFollow(between currentUser: User, and displayUser: User) -> Bool {
+        guard currentUser.id != displayUser.id,
+              case .success(true) = userRepository.hasRelation(from: currentUser, to: displayUser, type: .follow),
+              case .success(true) = userRepository.hasRelation(from: displayUser, to: currentUser, type: .follow) else {
+            return false
+        }
+        return true
     }
 
     private func currentUserId() -> UUID? {
@@ -204,6 +247,10 @@ extension MessageListViewController: UITableViewDataSource, UITableViewDelegate 
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        guard conversations.indices.contains(indexPath.row) else {
+            return
+        }
+
         let vc = MessagesViewController(conversation: conversations[indexPath.row])
         navigationController?.pushViewController(vc, animated: true)
     }

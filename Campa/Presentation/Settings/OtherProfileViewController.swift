@@ -463,7 +463,28 @@ final class OtherProfileViewController: BaseViewController {
         return imageView
     }
 
+    private func canChat(currentUser: User, targetUser: User) -> Bool {
+        guard currentUser.id != targetUser.id,
+              case .success(let currentUserFollowsTarget) = userRepository.hasRelation(from: currentUser, to: targetUser, type: .follow),
+              case .success(let targetUserFollowsCurrentUser) = userRepository.hasRelation(from: targetUser, to: currentUser, type: .follow) else {
+            return false
+        }
+
+        return currentUserFollowsTarget && targetUserFollowsCurrentUser
+    }
+
     @objc private func handleChatTapped() {
+        guard let currentUser = loadCurrentUser(),
+              case .success(let targetUser) = userRepository.fetchUser(id: userId) else {
+            AppToast.show(message: NSLocalizedString("User not found.", comment: "Missing user toast"), in: view)
+            return
+        }
+
+        guard canChat(currentUser: currentUser, targetUser: targetUser) else {
+            AppToast.show(message: NSLocalizedString("Only mutual followers can chat.", comment: "Mutual follow required chat toast"), in: view)
+            return
+        }
+
         let viewController = MessagesViewController(receiverUserId: userId)
         viewController.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(viewController, animated: true)

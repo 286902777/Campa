@@ -9,7 +9,6 @@ final class PostViewController: BaseViewController {
         static let publishCost = 300
     }
 
-    private let titleLabel = UILabel()
     private let contentCardView = UIView()
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
@@ -62,15 +61,8 @@ final class PostViewController: BaseViewController {
     }
 
     private func configureNavigation() {
-        view.backgroundColor = Constants.backgroundColor
-        navBar.backgroundColor = .clear
-        changeNavbar(.back)
-
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = NSLocalizedString("Post", comment: "Post screen title")
-        titleLabel.font = AppFont.semibold(size: 16)
-        titleLabel.textColor = Constants.darkTextColor
-        navBar.addSubview(titleLabel)
+        changeNavbar(.backTiltle)
+        self.setTitleAndRight(title: "Post", right: nil)
     }
 
     private func configureContentCard() {
@@ -179,9 +171,7 @@ final class PostViewController: BaseViewController {
 
     private func configureLayout() {
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: backBtn.trailingAnchor, constant: 8),
-            titleLabel.centerYAnchor.constraint(equalTo: backBtn.centerYAnchor),
-
+            
             contentCardView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 10),
             contentCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             contentCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),

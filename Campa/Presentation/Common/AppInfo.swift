@@ -14,4 +14,5 @@ extension Notification.Name {
     static let postDidPublish = Notification.Name("postDidPublish")
     static let activityDidPublish = Notification.Name("activityDidPublish")
     static let userFollowRelationDidChange = Notification.Name("userFollowRelationDidChange")
+    static let userBlockRelationDidChange = Notification.Name("userBlockRelationDidChange")
 }

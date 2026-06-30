@@ -276,8 +276,8 @@ final class PostDetailViewController: BaseViewController {
             ? [homePost.heroImage].compactMap { $0 }
             : homePost.thumbnailImages
 
-        thumbnailImages.prefix(4).forEach { image in
-            thumbnailsStackView.addArrangedSubview(makeThumbnailImageView(image: image))
+        thumbnailImages.prefix(4).enumerated().forEach { index, image in
+            thumbnailsStackView.addArrangedSubview(makeThumbnailImageView(image: image, index: index))
         }
     }
 
@@ -290,6 +290,7 @@ final class PostDetailViewController: BaseViewController {
 
         comments = postComments.map { comment in
             PostDetailComment(
+                author: comment.author,
                 authorName: comment.author?.nickname ?? NSLocalizedString("Unknown", comment: "Unknown comment author"),
                 content: comment.content,
                 avatarImage: makeAvatarImage(from: comment.author?.avatarLocalPath)
@@ -402,15 +403,27 @@ final class PostDetailViewController: BaseViewController {
         )
     }
 
-    private func makeThumbnailImageView(image: UIImage) -> UIImageView {
+    private func makeThumbnailImageView(image: UIImage, index: Int) -> UIImageView {
         let imageView = UIImageView()
         imageView.image = image
+        imageView.tag = index
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 12
         imageView.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
         imageView.layer.borderWidth = 1
         imageView.clipsToBounds = true
+        imageView.isUserInteractionEnabled = true
+        imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleThumbnailTapped(_:))))
         return imageView
+    }
+
+    @objc private func handleThumbnailTapped(_ sender: UITapGestureRecognizer) {
+        guard let imageView = sender.view as? UIImageView,
+              let image = imageView.image else {
+            return
+        }
+
+        heroImageView.image = image
     }
 
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
@@ -423,14 +436,46 @@ final class PostDetailViewController: BaseViewController {
     }
 
     override func rightAction() {
-        guard let userId = post.author?.id else {
-            AppToast.show(message: NSLocalizedString("User not found.", comment: "Missing user toast"), in: view)
+        let viewController = ReportAlertController()
+        viewController.modalPresentationStyle = .overFullScreen
+        viewController.actionHandler = { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if result {
+                    self.blockPostAuthor()
+                } else {
+                    let reportViewController = ReportViewController()
+                    self.navigationController?.pushViewController(reportViewController, animated: true)
+                }
+            }
+        }
+        present(viewController, animated: false)
+    }
+
+    private func blockPostAuthor() {
+        guard let currentUser = loadCurrentUser() else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
             return
         }
 
-        let viewController = OtherProfileViewController(userId: userId)
-        viewController.hidesBottomBarWhenPushed = true
-        navigationController?.pushViewController(viewController, animated: true)
+        guard let receiverUser = post.author else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        guard currentUser.id != receiverUser.id else {
+            AppToast.show(message: NSLocalizedString("You cannot block yourself.", comment: "Block self toast"), in: view)
+            return
+        }
+
+        switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
+        case .success:
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
+        case .failure(.duplicateRelation):
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+        }
     }
 }
 
@@ -454,12 +499,34 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
             return UITableViewCell()
         }
 
-        cell.configure(comment: comments[indexPath.row])
+        let comment = comments[indexPath.row]
+        cell.configure(comment: comment)
+        cell.onAvatarTapped = { [weak self] in
+            self?.showCommentAuthorProfile(comment)
+        }
         return cell
+    }
+
+    private func showCommentAuthorProfile(_ comment: PostDetailComment) {
+        guard let author = comment.author else {
+            return
+        }
+
+        if let currentUser = loadCurrentUser(), currentUser.id == author.id {
+            let viewController = ProfileViewController()
+            viewController.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(viewController, animated: true)
+            return
+        }
+
+        let viewController = OtherProfileViewController(userId: author.id)
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
     }
 }
 
 private struct PostDetailComment {
+    let author: User?
     let authorName: String
     let content: String
     let avatarImage: UIImage?
@@ -469,6 +536,7 @@ private final class PostDetailCommentCell: UITableViewCell {
     static let reuseIdentifier = "PostDetailCommentCell"
 
     private let commentView = PostDetailCommentView()
+    var onAvatarTapped: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -481,8 +549,16 @@ private final class PostDetailCommentCell: UITableViewCell {
         nil
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        onAvatarTapped = nil
+    }
+
     func configure(comment: PostDetailComment) {
         commentView.configure(comment: comment)
+        commentView.onAvatarTapped = { [weak self] in
+            self?.onAvatarTapped?()
+        }
     }
 
     private func configure() {
@@ -507,6 +583,7 @@ private final class PostDetailCommentView: UIView {
     private let nameLabel = UILabel()
     private let contentLabel = UILabel()
     private let moreButton = UIButton(type: .custom)
+    var onAvatarTapped: (() -> Void)?
 
     init(comment: PostDetailComment? = nil) {
         super.init(frame: .zero)
@@ -533,6 +610,8 @@ private final class PostDetailCommentView: UIView {
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.layer.cornerRadius = 17
         avatarImageView.clipsToBounds = true
+        avatarImageView.isUserInteractionEnabled = true
+        avatarImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleAvatarTapped)))
 
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         nameLabel.font = AppFont.semibold(size: 12)
@@ -581,6 +660,10 @@ private final class PostDetailCommentView: UIView {
         avatarImageView.image = comment.avatarImage ?? UIImage(named: "muser")
         nameLabel.text = comment.authorName
         contentLabel.text = comment.content
+    }
+
+    @objc private func handleAvatarTapped() {
+        onAvatarTapped?()
     }
 }
 

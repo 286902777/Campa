@@ -74,8 +74,14 @@ final class HomeViewController: BaseViewController {
         )
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleUserFollowRelationDidChange),
+            selector: #selector(handleUserRelationDidChange),
             name: .userFollowRelationDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserRelationDidChange),
+            name: .userBlockRelationDidChange,
             object: nil
         )
     }
@@ -125,6 +131,9 @@ final class HomeViewController: BaseViewController {
             }
             viewController.onPostSelected = { [weak self] homePost in
                 self?.showPostDetail(homePost)
+            }
+            viewController.onAvatarTapped = { [weak self] homePost in
+                self?.showAuthorProfile(homePost)
             }
             return viewController
         }
@@ -266,6 +275,23 @@ final class HomeViewController: BaseViewController {
         navigationController?.pushViewController(viewController, animated: true)
     }
 
+    private func showAuthorProfile(_ homePost: HomePost) {
+        guard let author = homePost.sourcePost?.author else {
+            return
+        }
+
+        if let currentUser = loadCurrentUser(), currentUser.id == author.id {
+            let viewController = ProfileViewController()
+            viewController.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(viewController, animated: true)
+            return
+        }
+
+        let viewController = OtherProfileViewController(userId: author.id)
+        viewController.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
     private func loadPosts() {
         guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
               let userId = UUID(uuidString: userIdString),
@@ -327,7 +353,7 @@ final class HomeViewController: BaseViewController {
         loadPosts()
     }
 
-    @objc private func handleUserFollowRelationDidChange() {
+    @objc private func handleUserRelationDidChange() {
         loadPosts()
     }
 
@@ -422,6 +448,7 @@ private final class HomePostsPageViewController: UIViewController {
     private let tableView = UITableView(frame: .zero, style: .plain)
     var onMoreTapped: ((HomePost) -> Void)?
     var onPostSelected: ((HomePost) -> Void)?
+    var onAvatarTapped: ((HomePost) -> Void)?
 
     init(posts: [HomePost]) {
         self.posts = posts
@@ -489,10 +516,14 @@ extension HomePostsPageViewController: UITableViewDataSource, UITableViewDelegat
         ) as? HomePostTableViewCell else {
             return UITableViewCell()
         }
-        cell.configure(post: posts[indexPath.row])
+        let post = posts[indexPath.row]
+        cell.configure(post: post)
         cell.onMoreTapped = { [weak self] in
             guard let self = self else { return }
-            self.onMoreTapped?(self.posts[indexPath.row])
+            self.onMoreTapped?(post)
+        }
+        cell.onAvatarTapped = { [weak self] in
+            self?.onAvatarTapped?(post)
         }
         return cell
     }
@@ -524,6 +555,7 @@ private final class HomePostTableViewCell: UITableViewCell {
     private var thumbnailsBottomConstraint: NSLayoutConstraint?
     private var heroBottomConstraint: NSLayoutConstraint?
     var onMoreTapped: (() -> Void)?
+    var onAvatarTapped: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -551,6 +583,7 @@ private final class HomePostTableViewCell: UITableViewCell {
         thumbnailsHeightConstraint?.isActive = true
         thumbnailsBottomConstraint?.isActive = true
         onMoreTapped = nil
+        onAvatarTapped = nil
     }
 
     func configure(post: HomePost) {
@@ -610,6 +643,8 @@ private final class HomePostTableViewCell: UITableViewCell {
         avatarImageView.layer.borderWidth = 1.5
         avatarImageView.layer.borderColor = UIColor.white.cgColor
         avatarImageView.clipsToBounds = true
+        avatarImageView.isUserInteractionEnabled = true
+        avatarImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(avatarTapped)))
 
         authorLabel.translatesAutoresizingMaskIntoConstraints = false
         authorLabel.font = AppFont.bold(size: 13)
@@ -716,5 +751,9 @@ private final class HomePostTableViewCell: UITableViewCell {
 
     @objc private func moreButtonTapped() {
         onMoreTapped?()
+    }
+
+    @objc private func avatarTapped() {
+        onAvatarTapped?()
     }
 }
