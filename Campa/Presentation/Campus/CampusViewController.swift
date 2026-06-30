@@ -20,16 +20,13 @@ final class CampusViewController: BaseViewController {
     private let recentAddButton = UIButton(type: .custom)
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let activityRepository: ActivityRepository
+    private let userRepository: UserRepository
 
-    private var activities: [CampusActivity] = [
-        CampusActivity(imageNames: ["build", "build_sel", "photo"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
-        CampusActivity(imageNames: ["build_sel", "photo", "build"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
-        CampusActivity(imageNames: ["photo", "build", "build_sel"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus"),
-        CampusActivity(imageNames: ["build", "photo", "build_sel"], title: "Yonsei Spring Festival", date: "May 24 | Fri 10:00 AM", campus: "Yonsei Main Campus")
-    ]
+    private var activities: [CampusActivity] = []
 
-    init(activityRepository: ActivityRepository = ActivityRepository()) {
+    init(activityRepository: ActivityRepository = ActivityRepository(), userRepository: UserRepository = UserRepository()) {
         self.activityRepository = activityRepository
+        self.userRepository = userRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -196,9 +193,9 @@ final class CampusViewController: BaseViewController {
             return
         }
 
-        activities = databaseActivities.map(makeCampusActivity)
         AppLoading.show(in: self.view) { [weak self] in
             guard let self = self else { return }
+            activities = databaseActivities.map(makeCampusActivity)
             self.tableView.reloadData()
         }
     }
@@ -212,8 +209,31 @@ final class CampusViewController: BaseViewController {
             imagePaths: imagePaths,
             title: activity.title,
             date: makeDateText(from: activity.startAt),
-            campus: activity.addressText ?? NSLocalizedString("Yonsei Main Campus", comment: "Default activity campus")
+            campus: activity.addressText ?? NSLocalizedString("Yonsei Main Campus", comment: "Default activity campus"),
+            isParticipated: isActivityParticipated(activity)
         )
+    }
+
+    private func isActivityParticipated(_ activity: Activity) -> Bool {
+        guard let currentUser = loadCurrentUser(),
+              case .success(let participants) = activityRepository.fetchParticipants(for: activity) else {
+            return false
+        }
+
+        return participants.contains { $0.user?.id == currentUser.id }
+    }
+
+    private func loadCurrentUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId) {
+            return user
+        }
+
+        guard case .success(let user) = userRepository.fetchCurrentUser() else {
+            return nil
+        }
+        return user
     }
 
     private func makeDateText(from date: Date?) -> String {
@@ -271,6 +291,7 @@ private struct CampusActivity {
     let title: String
     let date: String
     let campus: String
+    let isParticipated: Bool
 }
 
 private final class CampusActivityTableViewCell: UITableViewCell {
@@ -301,6 +322,10 @@ private final class CampusActivityTableViewCell: UITableViewCell {
         titleLabel.text = activity.title
         dateLabel.text = activity.date
         campusLabel.text = activity.campus
+        let buttonTitle = activity.isParticipated
+            ? NSLocalizedString("Participated", comment: "Campus activity participated button")
+            : NSLocalizedString("+ Join", comment: "Join campus activity button")
+        joinButton.setTitle(buttonTitle, for: .normal)
     }
 
     private func makeActivityImage(from imagePath: String?) -> UIImage? {
@@ -344,7 +369,7 @@ private final class CampusActivityTableViewCell: UITableViewCell {
         dateLabel.textColor = UIColor.white.withAlphaComponent(0.82)
 
         locationIconView.translatesAutoresizingMaskIntoConstraints = false
-        locationIconView.image = UIImage(named: "location")
+        locationIconView.image = UIImage(named: "local_icon")
         locationIconView.contentMode = .scaleAspectFit
 
         campusLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -353,11 +378,14 @@ private final class CampusActivityTableViewCell: UITableViewCell {
 
         joinButton.translatesAutoresizingMaskIntoConstraints = false
         joinButton.setTitle(NSLocalizedString("+ Join", comment: "Join campus activity button"), for: .normal)
-        joinButton.setTitleColor(CampusViewController.Constants.darkTextColor, for: .normal)
+        joinButton.setTitleColor(UIColor.white, for: .normal)
         joinButton.titleLabel?.font = AppFont.bold(size: 12)
         joinButton.backgroundColor = CampusViewController.Constants.limeColor
         joinButton.layer.cornerRadius = 15
-
+        joinButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        joinButton.setContentHuggingPriority(.required, for: .horizontal)
+        joinButton.isUserInteractionEnabled = false
+        
         contentView.addSubview(cardView)
         cardView.addSubview(activityImageView)
         cardView.addSubview(titleLabel)
@@ -399,7 +427,7 @@ private final class CampusActivityTableViewCell: UITableViewCell {
 
             joinButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
             joinButton.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
-            joinButton.widthAnchor.constraint(equalToConstant: 62),
+            joinButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 62),
             joinButton.heightAnchor.constraint(equalToConstant: 30)
         ])
     }

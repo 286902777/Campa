@@ -26,11 +26,11 @@ final class AuthEntryViewController: UIViewController {
     private let privacyPolicyText = NSLocalizedString("Privacy Policy", comment: "Privacy policy link")
     private let signUpText = NSLocalizedString("Sign up", comment: "Sign up link")
     private var isAgreementSelected = false
+    private let userRepository: UserRepository
 
-    var onAppleLoginSucceeded: ((String) -> Void)?
-
-    init(viewModel: AuthEntryViewModel = AuthEntryViewModel()) {
+    init(viewModel: AuthEntryViewModel = AuthEntryViewModel(), userRepository: UserRepository = UserRepository()) {
         self.viewModel = viewModel
+        self.userRepository = userRepository
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -263,8 +263,42 @@ final class AuthEntryViewController: UIViewController {
         guard guardAgreementSelected() else {
             return
         }
+        guard let user = loginGuestUser() else {
+            showToast(message: NSLocalizedString("Failed to login", comment: "Guest login failed toast"))
+            return
+        }
 
-        navigationController?.pushViewController(SignUpViewController(), animated: true)
+        UserDefaults.standard.set(user.id.uuidString, forKey: CurrentUserIdKey)
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.switchToMainTabBarController()
+        }
+    }
+
+    private func loginGuestUser() -> User? {
+        if let userIdString = UserDefaults.standard.string(forKey: GuestUserIdKey),
+           let userId = UUID(uuidString: userIdString),
+           case .success(let user) = userRepository.fetchUser(id: userId),
+           case .success(let activatedUser) = userRepository.activateUser(user) {
+            return activatedUser
+        }
+
+        guard case .success(let user) = userRepository.createGuestCurrentUser() else {
+            return nil
+        }
+
+        UserDefaults.standard.set(user.id.uuidString, forKey: GuestUserIdKey)
+        return user
+    }
+
+    private func switchToMainTabBarController() {
+        guard let window = view.window else {
+            return
+        }
+
+        UIView.transition(with: window, duration: 0.25) {
+            window.rootViewController = MainTabBarController()
+        }
     }
 
     @objc private func handleSignUpPromptTapped() {
@@ -284,12 +318,6 @@ final class AuthEntryViewController: UIViewController {
         authorizationController.delegate = self
         authorizationController.presentationContextProvider = self
         authorizationController.performRequests()
-    }
-
-    private func handleAppleLoginSucceeded(userID: String) {
-        print("Apple user id: \(userID)")
-        onAppleLoginSucceeded?(userID)
-        showToast(message: "Apple user id: \(userID)")
     }
 
     private func guardAgreementSelected() -> Bool {
@@ -373,10 +401,14 @@ extension AuthEntryViewController: ASAuthorizationControllerDelegate, ASAuthoriz
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
             return
         }
-
-        handleAppleLoginSucceeded(userID: credential.user)
+        
+        UserDefaults.standard.set(credential.user, forKey: CurrentUserIdKey)
+        AppLoading.show(in: self.view) { [weak self] in
+            guard let self = self else { return }
+            self.switchToMainTabBarController()
+        }
     }
-
+    
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         let authorizationError = error as? ASAuthorizationError
         guard authorizationError?.code != .canceled else {

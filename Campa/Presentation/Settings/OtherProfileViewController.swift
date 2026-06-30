@@ -27,6 +27,9 @@ final class OtherProfileViewController: BaseViewController {
     private let locationIconView = UIImageView()
     private let locationLabel = UILabel()
     private let statsStackView = UIStackView()
+    private let followingCountLabel = UILabel()
+    private let followersCountLabel = UILabel()
+    private let postsCountLabel = UILabel()
     private let postCardView = UIView()
     private let postAvatarImageView = UIImageView()
     private let postNameLabel = UILabel()
@@ -37,6 +40,8 @@ final class OtherProfileViewController: BaseViewController {
     private let emptyView = EmptyView()
     private var postCardBottomConstraint: Constraint?
     private var emptyBottomConstraint: Constraint?
+    private var thumbnailTopConstraint: Constraint?
+    private var thumbnailHeightConstraint: Constraint?
     private var thumbnailBottomConstraint: Constraint?
     private var heroBottomConstraint: Constraint?
 
@@ -87,7 +92,7 @@ final class OtherProfileViewController: BaseViewController {
         profilePanelView.layer.cornerRadius = 34
         profilePanelView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
-        avatarImageView.image = UIImage(named: "user_icon")
+        avatarImageView.image = defaultAvatarImage()
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.layer.cornerRadius = 46
         avatarImageView.clipsToBounds = true
@@ -100,6 +105,7 @@ final class OtherProfileViewController: BaseViewController {
         schoolLabel.text = viewModel.school
         schoolLabel.font = AppFont.semibold(size: 20)
         schoolLabel.textColor = Constants.mutedTextColor
+        schoolLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         configureActionButton(chatButton, title: "Chat", image: UIImage(named: "chat") ?? UIImage(systemName: "message.fill"), tintColor: UIColor(red: 0.08, green: 0.80, blue: 0.34, alpha: 1.0))
         chatButton.addTarget(self, action: #selector(handleChatTapped), for: .touchUpInside)
@@ -107,8 +113,8 @@ final class OtherProfileViewController: BaseViewController {
         followButton.addTarget(self, action: #selector(handleFollowTapped), for: .touchUpInside)
 
         actionStackView.axis = .horizontal
-        actionStackView.alignment = .fill
-        actionStackView.distribution = .fillEqually
+        actionStackView.alignment = .center
+        actionStackView.distribution = .fill
         actionStackView.spacing = 28
 
         locationIconView.image = UIImage(named: "location")
@@ -118,15 +124,16 @@ final class OtherProfileViewController: BaseViewController {
         locationLabel.text = viewModel.location
         locationLabel.font = AppFont.medium(size: 14)
         locationLabel.textColor = Constants.mutedTextColor
+        locationLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         statsStackView.axis = .horizontal
         statsStackView.alignment = .center
         statsStackView.distribution = .fillEqually
         statsStackView.spacing = 24
         [
-            makeStatView(count: viewModel.followingCount, title: viewModel.followingTitle),
-            makeStatView(count: viewModel.followersCount, title: viewModel.followersTitle),
-            makeStatView(count: viewModel.postsCount, title: viewModel.postsTitle)
+            makeStatView(countLabel: followingCountLabel, count: viewModel.followingCount, title: viewModel.followingTitle),
+            makeStatView(countLabel: followersCountLabel, count: viewModel.followersCount, title: viewModel.followersTitle),
+            makeStatView(countLabel: postsCountLabel, count: viewModel.postsCount, title: viewModel.postsTitle)
         ].forEach(statsStackView.addArrangedSubview)
     }
 
@@ -139,6 +146,7 @@ final class OtherProfileViewController: BaseViewController {
         button.setImage(image, for: .normal)
         button.titleLabel?.font = AppFont.semibold(size: 14)
         button.semanticContentAttribute = .forceLeftToRight
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 22, bottom: 0, right: 22)
         button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -6, bottom: 0, right: 6)
     }
 
@@ -147,7 +155,7 @@ final class OtherProfileViewController: BaseViewController {
         postCardView.layer.cornerRadius = 24
         postCardView.clipsToBounds = true
 
-        postAvatarImageView.image = UIImage(named: "user_icon")
+        postAvatarImageView.image = defaultAvatarImage()
         postAvatarImageView.backgroundColor = .white
         postAvatarImageView.contentMode = .scaleAspectFill
         postAvatarImageView.layer.cornerRadius = 27
@@ -206,16 +214,24 @@ final class OtherProfileViewController: BaseViewController {
         nameLabel.snp.makeConstraints { make in
             make.top.equalTo(avatarImageView.snp.bottom).offset(16)
             make.leading.equalTo(profilePanelView.snp.leading).offset(25)
-            make.trailing.greaterThanOrEqualTo(statsStackView.snp.leading).inset(25)
+            make.trailing.lessThanOrEqualTo(statsStackView.snp.leading).offset(-16)
         }
         schoolLabel.snp.makeConstraints { make in
             make.top.equalTo(nameLabel.snp.bottom).offset(8)
             make.leading.equalTo(nameLabel.snp.leading)
+            make.trailing.lessThanOrEqualTo(profilePanelView.snp.trailing).inset(26)
         }
         actionStackView.snp.makeConstraints { make in
             make.top.equalTo(schoolLabel.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview().inset(47)
+            make.centerX.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().offset(24)
+            make.trailing.lessThanOrEqualToSuperview().inset(24)
             make.height.equalTo(36)
+        }
+        [chatButton, followButton].forEach { button in
+            button.snp.makeConstraints { make in
+                make.height.equalTo(36)
+            }
         }
         locationIconView.snp.makeConstraints { make in
             make.leading.equalTo(schoolLabel.snp.leading)
@@ -271,9 +287,9 @@ final class OtherProfileViewController: BaseViewController {
             make.height.equalTo(postHeroImageView.snp.width).multipliedBy(0.56)
         }
         thumbnailStackView.snp.makeConstraints { make in
-            make.top.equalTo(postHeroImageView.snp.bottom).offset(4)
+            thumbnailTopConstraint = make.top.equalTo(postHeroImageView.snp.bottom).offset(4).constraint
             make.leading.trailing.equalTo(postHeroImageView)
-            make.height.equalTo(postHeroImageView.snp.height).multipliedBy(0.32)
+            thumbnailHeightConstraint = make.height.equalTo(postHeroImageView.snp.height).multipliedBy(0.32).constraint
             thumbnailBottomConstraint = make.bottom.equalToSuperview().inset(22).constraint
         }
         postHeroImageView.snp.makeConstraints { make in
@@ -290,7 +306,29 @@ final class OtherProfileViewController: BaseViewController {
         }
 
         apply(user: user)
+        loadStats(for: user)
         loadFirstPost(for: user)
+        updateFollowState(for: user)
+    }
+
+    private func loadStats(for user: User) {
+        if case .success(let followingCount) = userRepository.countFollowingUsers(for: user) {
+            followingCountLabel.text = "\(followingCount)"
+        } else {
+            followingCountLabel.text = "0"
+        }
+
+        if case .success(let followersCount) = userRepository.countFollowersUsers(for: user) {
+            followersCountLabel.text = "\(followersCount)"
+        } else {
+            followersCountLabel.text = "0"
+        }
+
+        if case .success(let postsCount) = postRepository.countPosts(for: user) {
+            postsCountLabel.text = "\(postsCount)"
+        } else {
+            postsCountLabel.text = "0"
+        }
     }
 
     private func apply(user: User) {
@@ -299,11 +337,10 @@ final class OtherProfileViewController: BaseViewController {
         locationLabel.text = user.location ?? viewModel.location
         postNameLabel.text = user.nickname
 
-        guard let avatarLocalPath = avatarPath(from: user.avatarLocalPath),
-              let avatarImage = UIImage(contentsOfFile: avatarLocalPath) else {
-            headerImageView.image = UIImage(named: "user_icon")
-            avatarImageView.image = UIImage(named: "user_icon")
-            postAvatarImageView.image = UIImage(named: "user_icon")
+        guard let avatarImage = makeAvatarImage(from: user.avatarLocalPath) else {
+            headerImageView.image = defaultAvatarImage()
+            avatarImageView.image = defaultAvatarImage()
+            postAvatarImageView.image = defaultAvatarImage()
             return
         }
 
@@ -338,12 +375,21 @@ final class OtherProfileViewController: BaseViewController {
             thumbnailStackView.addArrangedSubview(makeThumbnailImageView(image: image))
         }
         let shouldHideThumbnails = images.count <= 1
-        thumbnailStackView.isHidden = shouldHideThumbnails
-        if shouldHideThumbnails {
+        updateThumbnailLayout(isHidden: shouldHideThumbnails)
+    }
+
+    private func updateThumbnailLayout(isHidden: Bool) {
+        thumbnailStackView.isHidden = isHidden
+
+        if isHidden {
+            thumbnailTopConstraint?.deactivate()
+            thumbnailHeightConstraint?.deactivate()
             thumbnailBottomConstraint?.deactivate()
             heroBottomConstraint?.activate()
         } else {
             heroBottomConstraint?.deactivate()
+            thumbnailTopConstraint?.activate()
+            thumbnailHeightConstraint?.activate()
             thumbnailBottomConstraint?.activate()
         }
     }
@@ -368,7 +414,7 @@ final class OtherProfileViewController: BaseViewController {
         }
 
         return postImages.compactMap { image in
-            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) }
+            postImageURL(for: image.localPath).flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: image.localPath)
         }
     }
 
@@ -381,14 +427,26 @@ final class OtherProfileViewController: BaseViewController {
             .appendingPathComponent(value)
     }
 
-    private func avatarPath(from storedPath: String?) -> String? {
+    private func makeAvatarImage(from storedPath: String?) -> UIImage? {
         let value = storedPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !value.isEmpty else { return nil }
-        if value.hasPrefix("/") { return value }
-        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("Avatars", isDirectory: true)
-            .appendingPathComponent(value)
-            .path
+        guard !value.isEmpty else {
+            return defaultAvatarImage()
+        }
+
+        let avatarURL: URL?
+        if value.hasPrefix("/") {
+            avatarURL = URL(fileURLWithPath: value)
+        } else {
+            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Avatars", isDirectory: true)
+                .appendingPathComponent(value)
+        }
+
+        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: value) ?? defaultAvatarImage()
+    }
+
+    private func defaultAvatarImage() -> UIImage? {
+        UIImage(named: "muser") ?? UIImage(named: "user_icon")
     }
 
     private func makeRelativeTime(from date: Date) -> String {
@@ -397,13 +455,12 @@ final class OtherProfileViewController: BaseViewController {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 
-    private func makeStatView(count: String, title: String) -> UIView {
+    private func makeStatView(countLabel: UILabel, count: String, title: String) -> UIView {
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.alignment = .center
         stackView.spacing = 2
 
-        let countLabel = UILabel()
         countLabel.text = count
         countLabel.font = AppFont.semibold(size: 25)
         countLabel.textColor = Constants.darkTextColor
@@ -449,12 +506,43 @@ final class OtherProfileViewController: BaseViewController {
 
         switch userRepository.addRelation(from: currentUser, to: targetUser, type: .follow) {
         case .success:
+            updateFollowButton(isFollowed: true)
+            loadStats(for: targetUser)
             AppToast.show(message: NSLocalizedString("Followed successfully.", comment: "Follow success toast"), in: view)
         case .failure(.duplicateRelation):
+            updateFollowButton(isFollowed: true)
             AppToast.show(message: NSLocalizedString("Already followed.", comment: "Already followed toast"), in: view)
         case .failure:
             AppToast.show(message: NSLocalizedString("Failed to follow.", comment: "Follow failure toast"), in: view)
         }
+    }
+
+    private func updateFollowState(for targetUser: User) {
+        guard let currentUser = loadCurrentUser(),
+              currentUser.id != targetUser.id,
+              case .success(let isFollowed) = userRepository.hasRelation(from: currentUser, to: targetUser, type: .follow) else {
+            updateFollowButton(isFollowed: false)
+            return
+        }
+
+        updateFollowButton(isFollowed: isFollowed)
+    }
+
+    private func updateFollowButton(isFollowed: Bool) {
+        if isFollowed {
+            followButton.backgroundColor = UIColor(red: 0.82, green: 0.80, blue: 0.78, alpha: 1.0)
+            followButton.setTitle(NSLocalizedString("Followed", comment: "Followed button title"), for: .normal)
+            followButton.setTitleColor(Constants.mutedTextColor, for: .normal)
+            followButton.setImage(UIImage(named: "arrow"), for: .normal)
+        } else {
+            followButton.backgroundColor = .white
+            followButton.setTitle(NSLocalizedString("Follow", comment: "Follow button title"), for: .normal)
+            followButton.setTitleColor(Constants.darkTextColor, for: .normal)
+            followButton.setImage(UIImage(named: "arrow"), for: .normal)
+        }
+
+        followButton.invalidateIntrinsicContentSize()
+        actionStackView.setNeedsLayout()
     }
 
     private func loadCurrentUser() -> User? {

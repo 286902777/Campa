@@ -10,7 +10,7 @@ final class HomeViewModel {
         static let limeColor = UIColor(red: 0.86, green: 0.90, blue: 0.12, alpha: 1.0)
     }
 
-    let greetingTitle = NSLocalizedString("Good Morning, Jiwoo", comment: "Home greeting title")
+    let greetingTitle = NSLocalizedString("Good Morning", comment: "Home greeting title")
     let title = NSLocalizedString("Campa", comment: "App title")
     let subtitle = NSLocalizedString("Connect beyond classrooms.", comment: "Home subtitle")
     let searchPlaceholder = NSLocalizedString("Search posts, people, clubs...", comment: "Home search placeholder")

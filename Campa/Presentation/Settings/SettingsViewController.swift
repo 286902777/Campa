@@ -95,7 +95,9 @@ final class SettingsViewController: BaseViewController {
             vc.hidesBottomBarWhenPushed = true
             navigationController?.pushViewController(vc, animated: true)
         case 2:
-            break
+            let vc = WalletViewController()
+            vc.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(vc, animated: true)
         case 3:
             let vc = WebViewController()
             vc.type = .userAgreement
@@ -124,6 +126,7 @@ final class SettingsViewController: BaseViewController {
         case .success:
             AppLoading.show(in: self.view) { [weak self] in
                 guard let self = self else { return }
+                UserDefaults.standard.removeObject(forKey: GuestUserIdKey)
                 UserDefaults.standard.set("", forKey: CurrentUserIdKey)
                 UserDefaults.standard.synchronize()
                 showToast(message: NSLocalizedString("Account deleted successfully", comment: "Delete account success toast"))

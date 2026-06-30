@@ -13,7 +13,7 @@ final class ActivityDetailViewController: BaseViewController {
         static let backgroundColor = UIColor(red: 0.98, green: 0.93, blue: 0.86, alpha: 1.0)
         static let darkTextColor = UIColor(red: 52/255.0, green: 4/255, blue: 4/255.0, alpha: 1.0)
         static let mutedTextColor = UIColor(red: 0.42, green: 0.36, blue: 0.32, alpha: 1.0)
-        static let burgundyColor = UIColor(red: 0.20, green: 0.02, blue: 0.02, alpha: 1.0)
+        static let burgundyColor = UIColor(red: 52/255.0, green: 4/255.0, blue: 4/255.0, alpha: 1.0)
         static let horizontalInset: CGFloat = 28
     }
 
@@ -23,6 +23,8 @@ final class ActivityDetailViewController: BaseViewController {
     private let userRepository: UserRepository
     private var images: [UIImage] = []
 
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
     private let titleLabel = UILabel()
     private let imageCollectionView: UICollectionView
     private let infoCardView = UIView()
@@ -30,7 +32,7 @@ final class ActivityDetailViewController: BaseViewController {
     private let dateLabel = UILabel()
     private let locationIconView = UIImageView()
     private let locationLabel = UILabel()
-    private let joinButton = UIButton(type: .system)
+    private let joinButton = UIButton(type: .custom)
     private let participatedLabel = UILabel()
 
     init(
@@ -62,6 +64,7 @@ final class ActivityDetailViewController: BaseViewController {
         super.viewDidLoad()
 
         configureView()
+        configureScrollView()
         configureHeader()
         configureCollectionView()
         configureInfoCard()
@@ -75,13 +78,26 @@ final class ActivityDetailViewController: BaseViewController {
         setTitleAndRight(title: nil, right: "more", rightSize: CGSize(width: 36, height: 36))
     }
 
+    private func configureScrollView() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.backgroundColor = .clear
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.alwaysBounceVertical = true
+
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.backgroundColor = .clear
+
+        view.insertSubview(scrollView, at: 0)
+        scrollView.addSubview(contentView)
+    }
+
     private func configureHeader() {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = NSLocalizedString("Recent Activities", comment: "Activity detail title")
         titleLabel.font = AppFont.bold(size: 20)
         titleLabel.textColor = Constants.darkTextColor
         titleLabel.textAlignment = .center
-        view.addSubview(titleLabel)
+        contentView.addSubview(titleLabel)
     }
 
     private func configureCollectionView() {
@@ -93,14 +109,13 @@ final class ActivityDetailViewController: BaseViewController {
         imageCollectionView.dataSource = self
         imageCollectionView.delegate = self
         imageCollectionView.register(ActivityDetailImageCell.self, forCellWithReuseIdentifier: ActivityDetailImageCell.reuseIdentifier)
-        view.addSubview(imageCollectionView)
+        contentView.addSubview(imageCollectionView)
     }
 
     private func configureInfoCard() {
         infoCardView.translatesAutoresizingMaskIntoConstraints = false
         infoCardView.backgroundColor = .white
         infoCardView.layer.cornerRadius = 14
-        infoCardView.clipsToBounds = true
 
         activityTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         activityTitleLabel.font = AppFont.bold(size: 17)
@@ -128,15 +143,15 @@ final class ActivityDetailViewController: BaseViewController {
 
         participatedLabel.translatesAutoresizingMaskIntoConstraints = false
         participatedLabel.text = NSLocalizedString("Participated", comment: "Activity participated tag")
-        participatedLabel.textColor = Constants.burgundyColor
+        participatedLabel.backgroundColor = Constants.burgundyColor
+        participatedLabel.textColor = .white
         participatedLabel.font = AppFont.bold(size: 14)
         participatedLabel.textAlignment = .center
-        participatedLabel.backgroundColor = UIColor(red: 0.72, green: 0.62, blue: 0.97, alpha: 1.0)
+        participatedLabel.layer.masksToBounds = true
         participatedLabel.layer.cornerRadius = 24
-        participatedLabel.clipsToBounds = true
         participatedLabel.isHidden = true
 
-        view.addSubview(infoCardView)
+        contentView.addSubview(infoCardView)
         infoCardView.addSubview(activityTitleLabel)
         infoCardView.addSubview(dateLabel)
         infoCardView.addSubview(locationIconView)
@@ -147,19 +162,30 @@ final class ActivityDetailViewController: BaseViewController {
 
     private func configureLayout() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 48),
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 72),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -72),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 48),
+            titleLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 72),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -72),
 
             imageCollectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
-            imageCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            imageCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            imageCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            imageCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             imageCollectionView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.56),
 
-            infoCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            infoCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            infoCardView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -38),
+            infoCardView.topAnchor.constraint(equalTo: imageCollectionView.bottomAnchor, constant: 24),
+            infoCardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.horizontalInset),
+            infoCardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.horizontalInset),
             infoCardView.heightAnchor.constraint(equalToConstant: 96),
 
             activityTitleLabel.topAnchor.constraint(equalTo: infoCardView.topAnchor, constant: 18),
@@ -180,14 +206,16 @@ final class ActivityDetailViewController: BaseViewController {
             locationLabel.trailingAnchor.constraint(lessThanOrEqualTo: participatedLabel.leadingAnchor, constant: -12),
 
             joinButton.trailingAnchor.constraint(equalTo: infoCardView.trailingAnchor, constant: -14),
-            joinButton.bottomAnchor.constraint(equalTo: infoCardView.bottomAnchor, constant: -12),
+            joinButton.bottomAnchor.constraint(equalTo: infoCardView.bottomAnchor, constant: 22),
             joinButton.widthAnchor.constraint(equalToConstant: 88),
             joinButton.heightAnchor.constraint(equalToConstant: 48),
 
             participatedLabel.trailingAnchor.constraint(equalTo: joinButton.trailingAnchor),
             participatedLabel.bottomAnchor.constraint(equalTo: joinButton.bottomAnchor),
             participatedLabel.widthAnchor.constraint(equalToConstant: 112),
-            participatedLabel.heightAnchor.constraint(equalTo: joinButton.heightAnchor)
+            participatedLabel.heightAnchor.constraint(equalTo: joinButton.heightAnchor),
+
+            contentView.bottomAnchor.constraint(equalTo: joinButton.bottomAnchor, constant: 52)
         ])
     }
 

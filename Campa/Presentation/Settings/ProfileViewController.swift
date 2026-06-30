@@ -34,6 +34,8 @@ final class ProfileViewController: BaseViewController {
     private let emptyView = EmptyView()
     private var postCardBottomConstraint: Constraint?
     private var emptyBottomConstraint: Constraint?
+    private var thumbnailTopConstraint: Constraint?
+    private var thumbnailHeightConstraint: Constraint?
     private var thumbnailBottomConstraint: Constraint?
     private var heroBottomConstraint: Constraint?
 
@@ -87,6 +89,7 @@ final class ProfileViewController: BaseViewController {
         headerImageView.translatesAutoresizingMaskIntoConstraints = false
         headerImageView.contentMode = .scaleAspectFill
         headerImageView.clipsToBounds = true
+        headerImageView.backgroundColor = .white
     }
 
     private func configureProfilePanel() {
@@ -96,7 +99,7 @@ final class ProfileViewController: BaseViewController {
         profilePanelView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
-        avatarImageView.image = UIImage(named: "user_icon")
+        avatarImageView.image = defaultAvatarImage()
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.layer.cornerRadius = 46
         avatarImageView.clipsToBounds = true
@@ -148,7 +151,7 @@ final class ProfileViewController: BaseViewController {
         postCardView.clipsToBounds = true
 
         postAvatarImageView.translatesAutoresizingMaskIntoConstraints = false
-        postAvatarImageView.image = UIImage(named: "user_icon")
+        postAvatarImageView.image = defaultAvatarImage()
         postAvatarImageView.backgroundColor = .white
         postAvatarImageView.contentMode = .scaleAspectFill
         postAvatarImageView.layer.cornerRadius = 27
@@ -310,9 +313,9 @@ final class ProfileViewController: BaseViewController {
         }
 
         thumbnailStackView.snp.makeConstraints { make in
-            make.top.equalTo(postHeroImageView.snp.bottom).offset(4).priority(.medium)
+            thumbnailTopConstraint = make.top.equalTo(postHeroImageView.snp.bottom).offset(4).constraint
             make.leading.trailing.equalTo(postHeroImageView)
-            make.height.equalTo(postHeroImageView.snp.height).multipliedBy(0.32)
+            thumbnailHeightConstraint = make.height.equalTo(postHeroImageView.snp.height).multipliedBy(0.32).constraint
             thumbnailBottomConstraint = make.bottom.equalToSuperview().inset(22).constraint
         }
 
@@ -408,22 +411,31 @@ final class ProfileViewController: BaseViewController {
         locationLabel.text = user.location ?? viewModel.location
         postNameLabel.text = user.nickname
 
-        guard let avatarLocalPath = cleanedText(user.avatarLocalPath),
-              let avatarImage = UIImage(contentsOfFile: avatarLocalPath) else {
-            headerImageView.image = UIImage(named: "user_icon")
-            avatarImageView.image = UIImage(named: "user_icon")
-            postAvatarImageView.image = UIImage(named: "user_icon")
-            return
-        }
-
-        guard let localPath = cleanedText(user.avatarLocalPath),
-              let image = UIImage(contentsOfFile: localPath) else {
-            headerImageView.image = UIImage(named: "user_icon")
-            return
-        }
-        headerImageView.image = image
+        let avatarImage = makeAvatarImage(from: user.avatarLocalPath)
+        headerImageView.image = avatarImage
         avatarImageView.image = avatarImage
         postAvatarImageView.image = avatarImage
+    }
+
+    private func makeAvatarImage(from storedPath: String?) -> UIImage? {
+        guard let value = cleanedText(storedPath) else {
+            return defaultAvatarImage()
+        }
+
+        let avatarURL: URL?
+        if value.hasPrefix("/") {
+            avatarURL = URL(fileURLWithPath: value)
+        } else {
+            avatarURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
+                .appendingPathComponent("Avatars", isDirectory: true)
+                .appendingPathComponent(value)
+        }
+
+        return avatarURL.flatMap { UIImage(contentsOfFile: $0.path) } ?? UIImage(named: value) ?? defaultAvatarImage()
+    }
+
+    private func defaultAvatarImage() -> UIImage? {
+        UIImage(named: "muser") ?? UIImage(named: "user_icon")
     }
 
     private func loadFirstPost(for user: User) {
@@ -454,12 +466,21 @@ final class ProfileViewController: BaseViewController {
             thumbnailStackView.addArrangedSubview(makeThumbnailImageView(image: image))
         }
         let shouldHideThumbnails = images.count <= 1
-        thumbnailStackView.isHidden = shouldHideThumbnails
-        if shouldHideThumbnails {
+        updateThumbnailLayout(isHidden: shouldHideThumbnails)
+    }
+
+    private func updateThumbnailLayout(isHidden: Bool) {
+        thumbnailStackView.isHidden = isHidden
+
+        if isHidden {
+            thumbnailTopConstraint?.deactivate()
+            thumbnailHeightConstraint?.deactivate()
             thumbnailBottomConstraint?.deactivate()
             heroBottomConstraint?.activate()
         } else {
             heroBottomConstraint?.deactivate()
+            thumbnailTopConstraint?.activate()
+            thumbnailHeightConstraint?.activate()
             thumbnailBottomConstraint?.activate()
         }
     }

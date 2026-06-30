@@ -177,10 +177,15 @@ private final class BlacklistTableViewCell: UITableViewCell {
 
         if let avatar = user.avatarLocalPath,
            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            avatarImageView.image = UIImage(contentsOfFile: documentsURL
+            let filePath = documentsURL
                 .appendingPathComponent("Avatars", isDirectory: true)
                 .appendingPathComponent(avatar)
-                .path) ?? UIImage(named: "user_icon")
+                .path
+            if FileManager.default.fileExists(atPath: filePath) {
+                avatarImageView.image = UIImage(contentsOfFile:  filePath)
+            } else {
+                avatarImageView.image = UIImage(named: avatar)
+            }
         } else {
             avatarImageView.image = UIImage(named: "user_icon")
         }

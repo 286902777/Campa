@@ -13,10 +13,6 @@ final class HomeViewController: BaseViewController {
     private let viewModel: HomeViewModel
     private let greetingLabel = UILabel()
     private let subtitleLabel = UILabel()
-    private let searchContainerView = UIView()
-    private let searchIconView = UIImageView()
-    private let searchField = UITextField()
-    private let searchButton = UIButton(type: .system)
     private let segmentStackView = UIStackView()
     private let pageContainerView = UIView()
     private let pageViewController: UIPageViewController
@@ -58,7 +54,6 @@ final class HomeViewController: BaseViewController {
         configureBase()
         configureNotifications()
         configureHeader()
-        configureSearch()
         configureSegment()
         configurePages()
         configureLayout()
@@ -92,38 +87,6 @@ final class HomeViewController: BaseViewController {
 
         view.addSubview(greetingLabel)
         view.addSubview(subtitleLabel)
-    }
-
-    private func configureSearch() {
-        searchContainerView.translatesAutoresizingMaskIntoConstraints = false
-        searchContainerView.backgroundColor = .white
-        searchContainerView.layer.cornerRadius = 20
-        searchContainerView.layer.borderWidth = 1
-        searchContainerView.layer.borderColor = UIColor(red: 0.78, green: 0.72, blue: 0.98, alpha: 1.0).cgColor
-
-        searchIconView.translatesAutoresizingMaskIntoConstraints = false
-        searchIconView.image = UIImage(systemName: "magnifyingglass")
-        searchIconView.tintColor = UIColor(red: 0.78, green: 0.72, blue: 0.98, alpha: 1.0)
-        searchIconView.contentMode = .scaleAspectFit
-
-        searchField.translatesAutoresizingMaskIntoConstraints = false
-        searchField.placeholder = viewModel.searchPlaceholder
-        searchField.font = AppFont.medium(size: 11)
-        searchField.textColor = Constants.darkTextColor
-        searchField.borderStyle = .none
-        searchField.backgroundColor = .clear
-
-        searchButton.translatesAutoresizingMaskIntoConstraints = false
-        searchButton.setTitle(viewModel.searchButtonTitle, for: .normal)
-        searchButton.setTitleColor(UIColor(red: 0.64, green: 0.54, blue: 0.95, alpha: 1.0), for: .normal)
-        searchButton.titleLabel?.font = AppFont.medium(size: 11)
-        searchButton.backgroundColor = UIColor(red: 0.96, green: 0.94, blue: 1.0, alpha: 1.0)
-        searchButton.layer.cornerRadius = 14
-
-        searchContainerView.addSubview(searchIconView)
-        searchContainerView.addSubview(searchField)
-        searchContainerView.addSubview(searchButton)
-        view.addSubview(searchContainerView)
     }
 
     private func configureSegment() {
@@ -183,27 +146,8 @@ final class HomeViewController: BaseViewController {
             subtitleLabel.leadingAnchor.constraint(equalTo: greetingLabel.leadingAnchor),
             subtitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalInset),
 
-            searchContainerView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 14),
-            searchContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            searchContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            searchContainerView.heightAnchor.constraint(equalToConstant: 40),
-
-            searchIconView.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor, constant: 14),
-            searchIconView.centerYAnchor.constraint(equalTo: searchContainerView.centerYAnchor),
-            searchIconView.widthAnchor.constraint(equalToConstant: 14),
-            searchIconView.heightAnchor.constraint(equalToConstant: 14),
-
-            searchButton.trailingAnchor.constraint(equalTo: searchContainerView.trailingAnchor, constant: -7),
-            searchButton.centerYAnchor.constraint(equalTo: searchContainerView.centerYAnchor),
-            searchButton.widthAnchor.constraint(equalToConstant: 54),
-            searchButton.heightAnchor.constraint(equalToConstant: 28),
-
-            searchField.leadingAnchor.constraint(equalTo: searchIconView.trailingAnchor, constant: 8),
-            searchField.trailingAnchor.constraint(equalTo: searchButton.leadingAnchor, constant: -8),
-            searchField.centerYAnchor.constraint(equalTo: searchContainerView.centerYAnchor),
-
-            segmentStackView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 12),
-            segmentStackView.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor),
+            segmentStackView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 12),
+            segmentStackView.leadingAnchor.constraint(equalTo: subtitleLabel.leadingAnchor),
             segmentStackView.heightAnchor.constraint(equalToConstant: 28),
 
             pageContainerView.topAnchor.constraint(equalTo: segmentStackView.bottomAnchor, constant: 4),
@@ -309,18 +253,56 @@ final class HomeViewController: BaseViewController {
               let userId = UUID(uuidString: userIdString),
               case .success(let currentUser) = userRepository.fetchUser(id: userId),
               case .success(let posts) = postRepository.fetchHomeFeed(for: currentUser) else {
+            greetingLabel.text = viewModel.greetingTitle
             return
         }
+
+        updateGreeting(with: currentUser)
 
         let homePosts = posts.enumerated().map { index, post in
             makeHomePost(from: post, index: index)
         }
+        let followingHomePosts = makeFollowingHomePosts(from: posts, currentUser: currentUser)
+
         AppLoading.show(in: self.view) { [weak self] in
             guard let self = self else { return }
-            self.pageControllers.forEach { controller in
-                controller.updatePosts(homePosts)
+            self.pageControllers.enumerated().forEach { index, controller in
+                let pagePosts = index == 1 ? followingHomePosts : homePosts
+                controller.updatePosts(pagePosts)
             }
         }
+    }
+
+    private func makeFollowingHomePosts(from posts: [Post], currentUser: User) -> [HomePost] {
+        guard case .success(let followingUsers) = userRepository.fetchFollowingUsers(for: currentUser),
+              !followingUsers.isEmpty else {
+            return []
+        }
+
+        let followingUserIds = Set(followingUsers.map(\.id))
+        return posts
+            .filter { post in
+                guard let authorId = post.author?.id else {
+                    return false
+                }
+                return followingUserIds.contains(authorId)
+            }
+            .enumerated()
+            .map { index, post in
+                makeHomePost(from: post, index: index)
+            }
+    }
+
+    private func updateGreeting(with user: User) {
+        guard let nickname = cleanedText(user.nickname) else {
+            greetingLabel.text = viewModel.greetingTitle
+            return
+        }
+
+        greetingLabel.text = String(
+            format: NSLocalizedString("Good Morning, %@", comment: "Home greeting with user name"),
+            nickname
+        )
     }
 
     @objc private func handlePostDidPublish() {
@@ -373,7 +355,6 @@ final class HomeViewController: BaseViewController {
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
             return nil
         }
-
         return documentsURL
             .appendingPathComponent("PostImages", isDirectory: true)
             .appendingPathComponent(value)

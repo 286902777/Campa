@@ -6,7 +6,6 @@ final class LoginViewController: BaseViewController {
         static let fieldHeight: CGFloat = 64
         static let buttonHeight: CGFloat = 62
         static let fieldCornerRadius: CGFloat = 40
-        static let currentUserIdKey = "currentUserId"
     }
 
     private let viewModel: LoginViewModel
@@ -138,7 +137,7 @@ final class LoginViewController: BaseViewController {
             return
         }
 
-        UserDefaults.standard.set(user.id.uuidString, forKey: Constants.currentUserIdKey)
+        UserDefaults.standard.set(user.id.uuidString, forKey: CurrentUserIdKey)
         AppLoading.show(in: self.view) { [weak self] in
             guard let self = self else { return }
             self.switchToMainTabBarController()

@@ -74,6 +74,7 @@
 		1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */; };
 		1746C5C12FEF700000305DF9 /* ActivityDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */; };
 		1746C5C32FEF800000305DF9 /* ActivityCreateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */; };
+		1746C5C52FEFA00000305DF9 /* WalletViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1746C5C42FEFA00000305DF9 /* WalletViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -164,6 +165,7 @@
 		1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlacklistViewController.swift; sourceTree = "<group>"; };
 		1746C5C02FEF700000305DF9 /* ActivityDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDetailViewController.swift; sourceTree = "<group>"; };
 		1746C5C22FEF800000305DF9 /* ActivityCreateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityCreateViewController.swift; sourceTree = "<group>"; };
+		1746C5C42FEFA00000305DF9 /* WalletViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -371,6 +373,7 @@
 				1746C5BA2FEF400000305DF9 /* OtherProfileViewController.swift */,
 				1746C5BC2FEF500000305DF9 /* FollowViewController.swift */,
 				1746C5BE2FEF600000305DF9 /* BlacklistViewController.swift */,
+				1746C5C42FEFA00000305DF9 /* WalletViewController.swift */,
 				0A0000010000000000000132 /* EditProfileViewController.swift */,
 				1746C5AA2FECC89200305DF9 /* WebViewController.swift */,
 			);
@@ -664,6 +667,7 @@
 				1746C5BF2FEF600000305DF9 /* BlacklistViewController.swift in Sources */,
 				1746C5C12FEF700000305DF9 /* ActivityDetailViewController.swift in Sources */,
 				1746C5C32FEF800000305DF9 /* ActivityCreateViewController.swift in Sources */,
+				1746C5C52FEFA00000305DF9 /* WalletViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -4,10 +4,11 @@
 //
 //  Created by myfy on 2026/6/25.
 //
-
+import UIKit
 import Foundation
 
 let CurrentUserIdKey = "currentUserId"
+let GuestUserIdKey = "guestUserId"
 
 extension Notification.Name {
     static let postDidPublish = Notification.Name("postDidPublish")

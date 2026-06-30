@@ -28,6 +28,31 @@ final class UserRepository {
         return saveAndReturn(user)
     }
 
+    func createGuestCurrentUser() -> Result<User, PersistenceError> {
+        clearCurrentUserFlag()
+
+        let now = Date()
+        let userId = UUID()
+        let suffix = String(userId.uuidString.prefix(8))
+        let user = User(context: context)
+        user.id = userId
+        user.email = "guest_\(suffix.lowercased())@guest.campa"
+        user.passwordHash = nil
+        user.nickname = "Guest \(suffix)"
+        user.isCurrentUser = true
+        user.createdAt = now
+        user.updatedAt = now
+
+        return saveAndReturn(user)
+    }
+
+    func activateUser(_ user: User) -> Result<User, PersistenceError> {
+        clearCurrentUserFlag()
+        user.isCurrentUser = true
+        user.updatedAt = Date()
+        return saveAndReturn(user)
+    }
+
     func createRegisteredCurrentUser(
         email: String,
         passwordHash: String,
@@ -37,9 +62,13 @@ final class UserRepository {
         gender: String?,
         avatarLocalPath: String? = nil
     ) -> Result<User, PersistenceError> {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedNickname.isEmpty else {
+        guard !trimmedEmail.isEmpty, !trimmedNickname.isEmpty else {
             return .failure(.invalidTitle)
+        }
+        guard !hasUser(email: trimmedEmail) else {
+            return .failure(.duplicateRelation)
         }
 
         clearCurrentUserFlag()
@@ -47,7 +76,7 @@ final class UserRepository {
         let now = Date()
         let user = User(context: context)
         user.id = UUID()
-        user.email = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        user.email = trimmedEmail
         user.passwordHash = passwordHash
         user.nickname = trimmedNickname
         user.birthday = birthday
@@ -92,7 +121,7 @@ final class UserRepository {
     }
 
     func login(email: String, passwordHash: String) -> Result<User, PersistenceError> {
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !trimmedEmail.isEmpty, !passwordHash.isEmpty else {
             return .failure(.missingCurrentUser)
         }
@@ -100,7 +129,7 @@ final class UserRepository {
         let request = User.fetchRequest()
         request.fetchLimit = 1
         request.predicate = NSPredicate(
-            format: "email == %@ AND passwordHash == %@",
+            format: "email ==[c] %@ AND passwordHash == %@",
             trimmedEmail,
             passwordHash
         )
@@ -121,13 +150,13 @@ final class UserRepository {
     }
 
     func deleteUser(email: String) -> Result<Void, PersistenceError> {
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !trimmedEmail.isEmpty else {
             return .failure(.missingCurrentUser)
         }
 
         let request = User.fetchRequest()
-        request.predicate = NSPredicate(format: "email == %@", trimmedEmail)
+        request.predicate = NSPredicate(format: "email ==[c] %@", trimmedEmail)
 
         do {
             let users = try context.fetch(request)
@@ -162,14 +191,14 @@ final class UserRepository {
     }
 
     func updatePassword(email: String, passwordHash: String) -> Result<User, PersistenceError> {
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !trimmedEmail.isEmpty, !passwordHash.isEmpty else {
             return .failure(.missingCurrentUser)
         }
 
         let request = User.fetchRequest()
         request.fetchLimit = 1
-        request.predicate = NSPredicate(format: "email == %@", trimmedEmail)
+        request.predicate = NSPredicate(format: "email ==[c] %@", trimmedEmail)
 
         do {
             guard let user = try context.fetch(request).first else {
@@ -208,6 +237,21 @@ final class UserRepository {
         let request = UserRelation.fetchRequest()
         request.predicate = NSPredicate(
             format: "sourceUser == %@ AND type == %@",
+            user,
+            UserRelationType.follow.rawValue
+        )
+
+        do {
+            return .success(try context.count(for: request))
+        } catch {
+            return .failure(.coreDataSaveFailed)
+        }
+    }
+
+    func countFollowersUsers(for user: User) -> Result<Int, PersistenceError> {
+        let request = UserRelation.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "targetUser == %@ AND type == %@",
             user,
             UserRelationType.follow.rawValue
         )
@@ -302,6 +346,16 @@ final class UserRepository {
             $0.isCurrentUser = false
             $0.updatedAt = now
         }
+    }
+
+    private func hasUser(email: String) -> Bool {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmedEmail.isEmpty else { return false }
+
+        let request = User.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "email ==[c] %@", trimmedEmail)
+        return ((try? context.count(for: request)) ?? 0) > 0
     }
 
     private func saveAndReturn<T>(_ object: T) -> Result<T, PersistenceError> {

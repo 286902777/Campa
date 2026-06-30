@@ -20,7 +20,6 @@ final class LocalDataSeeder {
     func seedIfNeeded() {
         let importedVersion = UserDefaults.standard.integer(forKey: Constants.seedVersionKey)
         if hasSeededData(), importedVersion == Constants.seedVersion {
-            ensureCurrentUser()
             return
         }
 
@@ -128,7 +127,6 @@ final class LocalDataSeeder {
         do {
             try context.save()
             UserDefaults.standard.set(Constants.seedVersion, forKey: Constants.seedVersionKey)
-            ensureCurrentUser()
         } catch {
             context.rollback()
         }
@@ -172,24 +170,6 @@ final class LocalDataSeeder {
         request.fetchLimit = 1
         request.predicate = NSPredicate(format: "email == %@", email)
         return try? context.fetch(request).first
-    }
-
-    private func ensureCurrentUser() {
-        let currentUserId = UserDefaults.standard.string(forKey: CurrentUserIdKey) ?? ""
-        guard currentUserId.isEmpty else { return }
-
-        let request = User.fetchRequest()
-        request.fetchLimit = 1
-        request.predicate = NSPredicate(format: "email == %@", Constants.seedMarkerEmail)
-
-        guard let user = try? context.fetch(request).first else {
-            return
-        }
-
-        user.isCurrentUser = true
-        user.updatedAt = Date()
-        try? context.save()
-        UserDefaults.standard.set(user.id.uuidString, forKey: CurrentUserIdKey)
     }
 
     private func makeUsers() -> [SeedUser] {
