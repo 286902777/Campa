@@ -20,30 +20,16 @@ final class LocalDataSeeder {
 
     func seedIfNeeded() {
         let importedVersion = UserDefaults.standard.integer(forKey: Constants.seedVersionKey)
-        if hasSeededData(), importedVersion == Constants.seedVersion {
+        if hasSeededData(), hasSeededPosts(), importedVersion == Constants.seedVersion {
             return
         }
 
         resetSeededContent()
 
-        let users = makeUsers()
+        let seedUsers = makeUsers()
         let now = Date()
-        users.forEach { item in
-            let user = fetchUser(email: item.email) ?? User(context: context)
-            user.id = item.id
-            user.email = item.email
-            user.passwordHash = item.passwordHash ?? Constants.defaultPasswordHash
-            user.nickname = item.name
-            user.avatarLocalPath = item.avatar
-            user.school = item.location
-            user.location = item.location
-            if user.isInserted {
-                user.createdAt = now
-            }
-            user.updatedAt = now
-        }
-
-        guard let savedUsers = fetchSeedUsers(), !savedUsers.isEmpty else {
+        let savedUsers = seedUsers.map { upsertUser($0, now: now) }
+        guard savedUsers.count == seedUsers.count else {
             context.rollback()
             return
         }
@@ -53,7 +39,9 @@ final class LocalDataSeeder {
             return (email, user)
         })
 
-        makePosts().enumerated().forEach { index, item in
+        var createdPostCount = 0
+        let seedPosts = makePosts()
+        seedPosts.enumerated().forEach { index, item in
             guard let author = usersByEmail[item.authorEmail] else { return }
 
             let post = Post(context: context)
@@ -86,6 +74,7 @@ final class LocalDataSeeder {
             comment.createdAt = Calendar.current.date(byAdding: .minute, value: 18, to: post.createdAt) ?? post.createdAt
             comment.updatedAt = comment.createdAt
             post.commentCount = 1
+            createdPostCount += 1
         }
 
         makeActivities().forEach { item in
@@ -125,6 +114,11 @@ final class LocalDataSeeder {
             owner.joinedAt = activity.createdAt
         }
 
+        guard createdPostCount == seedPosts.count else {
+            context.rollback()
+            return
+        }
+
         do {
             try context.save()
             UserDefaults.standard.set(Constants.seedVersion, forKey: Constants.seedVersionKey)
@@ -137,6 +131,17 @@ final class LocalDataSeeder {
         let request = User.fetchRequest()
         request.fetchLimit = 1
         request.predicate = NSPredicate(format: "email == %@", Constants.seedMarkerEmail)
+        return ((try? context.count(for: request)) ?? 0) > 0
+    }
+
+    private func hasSeededPosts() -> Bool {
+        guard let users = fetchSeedUsers(), !users.isEmpty else {
+            return false
+        }
+
+        let request = Post.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSPredicate(format: "author IN %@", users)
         return ((try? context.count(for: request)) ?? 0) > 0
     }
 
@@ -171,6 +176,22 @@ final class LocalDataSeeder {
         request.fetchLimit = 1
         request.predicate = NSPredicate(format: "email == %@", email)
         return try? context.fetch(request).first
+    }
+
+    private func upsertUser(_ item: SeedUser, now: Date) -> User {
+        let user = fetchUser(email: item.email) ?? User(context: context)
+        user.id = item.id
+        user.email = item.email
+        user.passwordHash = item.passwordHash ?? Constants.defaultPasswordHash
+        user.nickname = item.name
+        user.avatarLocalPath = item.avatar
+        user.school = item.location
+        user.location = item.location
+        if user.isInserted {
+            user.createdAt = now
+        }
+        user.updatedAt = now
+        return user
     }
 
     private func makeUsers() -> [SeedUser] {

@@ -78,6 +78,49 @@ final class ActivityDetailViewController: BaseViewController {
         setTitleAndRight(title: nil, right: "more", rightSize: CGSize(width: 36, height: 36))
     }
 
+    override func rightAction() {
+        let vc = ReportAlertController()
+        vc.modalPresentationStyle = .overFullScreen
+        vc.actionHandler = { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if result {
+                    self.blockReceiverUser()
+                } else {
+                    let reportVC = ReportViewController()
+                    self.navigationController?.pushViewController(reportVC, animated: true)
+                }
+            }
+        }
+        self.present(vc, animated: false)
+    }
+
+    private func blockReceiverUser() {
+        guard let currentUser = loadCurrentUser() else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        guard let receiverUser = activity?.author else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        guard currentUser.id != receiverUser.id else {
+            AppToast.show(message: NSLocalizedString("You cannot block yourself.", comment: "Block self toast"), in: view)
+            return
+        }
+
+        switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
+        case .success:
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
+        case .failure(.duplicateRelation):
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+        }
+    }
+
     private func configureScrollView() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.backgroundColor = .clear
@@ -265,8 +308,11 @@ final class ActivityDetailViewController: BaseViewController {
         switch activityRepository.join(activity: activity, user: currentUser) {
         case .success:
             showParticipatedState()
+            NotificationCenter.default.post(name: .activityDidPublish, object: nil)
+            AppToast.show(message: NSLocalizedString("Joined activity successfully", comment: "Join activity success toast"), in: view)
         case .failure(.duplicateParticipant):
             showParticipatedState()
+            AppToast.show(message: NSLocalizedString("Already participated in this activity", comment: "Join activity duplicate toast"), in: view)
         case .failure:
             AppToast.show(message: NSLocalizedString("Failed to join activity", comment: "Join activity failed toast"), in: view)
         }

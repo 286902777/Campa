@@ -148,7 +148,7 @@ final class PostViewController: BaseViewController {
         locationIconView.tintColor = Constants.darkTextColor
 
         locationLabel.translatesAutoresizingMaskIntoConstraints = false
-        locationLabel.text = NSLocalizedString("Korea University", comment: "Post location")
+        locationLabel.text = NSLocalizedString("Current City", comment: "Current city placeholder")
         locationLabel.font = AppFont.medium(size: 11)
         locationLabel.textColor = Constants.darkTextColor
 
@@ -157,15 +157,12 @@ final class PostViewController: BaseViewController {
     }
 
     private func loadCurrentUserLocation() {
-        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
-              let userId = UUID(uuidString: userIdString),
-              case .success(let user) = userRepository.fetchUser(id: userId),
-              let location = user.location?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !location.isEmpty else {
-            return
+        CurrentCityProvider.shared.requestCurrentCity { [weak self] city in
+            guard let self, let city else { return }
+            DispatchQueue.main.async {
+                self.locationLabel.text = city
+            }
         }
-
-        locationLabel.text = location
     }
 
     private func configurePublishButton() {

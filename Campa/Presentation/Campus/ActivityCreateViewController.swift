@@ -89,8 +89,12 @@ final class ActivityCreateViewController: BaseViewController {
 
         let downIconView = UIImageView(image: UIImage(named: "down"))
         downIconView.contentMode = .scaleAspectFit
-        downIconView.frame = CGRect(x: 0, y: 0, width: 34, height: 18)
-        dateTextField.rightView = downIconView
+        downIconView.frame = CGRect(x: 10, y: 4, width: 14, height: 10)
+        let downIconContainerView = UIView(frame: CGRect(x: 0, y: 0, width: 34, height: 18))
+        downIconContainerView.addSubview(downIconView)
+        downIconContainerView.isUserInteractionEnabled = true
+        downIconContainerView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleDateIconTapped)))
+        dateTextField.rightView = downIconContainerView
         dateTextField.rightViewMode = .always
 
         contentCardView.addSubview(themeTextField)
@@ -132,7 +136,7 @@ final class ActivityCreateViewController: BaseViewController {
         locationIconView.tintColor = Constants.darkTextColor
 
         locationLabel.translatesAutoresizingMaskIntoConstraints = false
-        locationLabel.text = NSLocalizedString("Korea University", comment: "Activity location")
+        locationLabel.text = NSLocalizedString("Current City", comment: "Current city placeholder")
         locationLabel.font = AppFont.medium(size: 11)
         locationLabel.textColor = Constants.darkTextColor
 
@@ -141,15 +145,12 @@ final class ActivityCreateViewController: BaseViewController {
     }
 
     private func loadCurrentUserLocation() {
-        guard let userIdString = UserDefaults.standard.string(forKey: CurrentUserIdKey),
-              let userId = UUID(uuidString: userIdString),
-              case .success(let user) = userRepository.fetchUser(id: userId),
-              let location = user.location?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !location.isEmpty else {
-            return
+        CurrentCityProvider.shared.requestCurrentCity { [weak self] city in
+            guard let self, let city else { return }
+            DispatchQueue.main.async {
+                self.locationLabel.text = city
+            }
         }
-
-        locationLabel.text = location
     }
 
     private func configurePublishButton() {
@@ -204,6 +205,10 @@ final class ActivityCreateViewController: BaseViewController {
     @objc private func handleDateChanged() {
         selectedDate = datePicker.date
         dateTextField.text = makeDateText(from: selectedDate)
+    }
+
+    @objc private func handleDateIconTapped() {
+        dateTextField.becomeFirstResponder()
     }
 
     @objc private func handlePublishTapped() {

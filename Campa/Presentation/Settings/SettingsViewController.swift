@@ -207,7 +207,7 @@ private final class SettingsPlainRowView: UIControl {
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = row.title
-        titleLabel.font = AppFont.semibold(size: 11)
+        titleLabel.font = AppFont.semibold(size: 16)
         titleLabel.textColor = UIColor(red: 0.28, green: 0.02, blue: 0.02, alpha: 1.0)
 
         arrowImageView.translatesAutoresizingMaskIntoConstraints = false
