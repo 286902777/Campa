@@ -126,11 +126,20 @@ extension FollowersViewController: UITableViewDataSource {
         }
 
         let user = users[indexPath.row]
-        cell.configure(user: user)
+        cell.configure(user: user, isFollowing: isFollowing(user))
         cell.onAddTapped = { [weak self] in
             self?.follow(user: user)
         }
         return cell
+    }
+
+    private func isFollowing(_ user: User) -> Bool {
+        guard let currentUser,
+              currentUser.objectID != user.objectID,
+              case .success(true) = userRepository.hasRelation(from: currentUser, to: user, type: .follow) else {
+            return false
+        }
+        return true
     }
 }
 
@@ -163,9 +172,10 @@ private final class FollowerTableViewCell: UITableViewCell {
         nil
     }
 
-    func configure(user: User) {
+    func configure(user: User, isFollowing: Bool) {
         nameLabel.text = user.nickname
         avatarImageView.image = makeAvatarImage(from: user.avatarLocalPath)
+        addButton.isHidden = isFollowing
         onAddTapped = nil
     }
 

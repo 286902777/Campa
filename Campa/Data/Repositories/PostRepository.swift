@@ -13,7 +13,8 @@ final class PostRepository {
         title: String,
         content: String,
         addressText: String?,
-        imagePaths: [String]
+        imagePaths: [String],
+        isBoosted: Bool = false
     ) -> Result<Post, PersistenceError> {
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return .failure(.invalidTitle)
@@ -31,7 +32,7 @@ final class PostRepository {
         post.addressText = addressText
         post.latitude = 0
         post.longitude = 0
-        post.likeCount = 0
+        post.likeCount = isBoosted ? 300 : 0
         post.commentCount = 0
         post.createdAt = now
         post.updatedAt = now
@@ -89,7 +90,15 @@ final class PostRepository {
         request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
 
         do {
-            return .success(try context.fetch(request))
+            let posts = try context.fetch(request).sorted { lhs, rhs in
+                let lhsIsHot = lhs.likeCount >= 300
+                let rhsIsHot = rhs.likeCount >= 300
+                if lhsIsHot != rhsIsHot {
+                    return lhsIsHot
+                }
+                return lhs.createdAt > rhs.createdAt
+            }
+            return .success(posts)
         } catch {
             return .failure(.coreDataSaveFailed)
         }

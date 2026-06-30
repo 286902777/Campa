@@ -25,6 +25,12 @@ final class PostViewController: BaseViewController {
 
     private var selectedImages: [UIImage] = []
     private var collH: CGFloat = 0
+    private var isBoostSelected = false {
+        didSet {
+            updateBoostState()
+        }
+    }
+
     init(userRepository: UserRepository = UserRepository(), postRepository: PostRepository = PostRepository()) {
         self.userRepository = userRepository
         self.postRepository = postRepository
@@ -109,7 +115,6 @@ final class PostViewController: BaseViewController {
 
     private func configureBoostView() {
         boostBadgeView.translatesAutoresizingMaskIntoConstraints = false
-        boostBadgeView.backgroundColor = UIColor(red: 0.87, green: 0.90, blue: 0.12, alpha: 1.0)
         boostBadgeView.layer.cornerRadius = 15
 
         hotImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -121,7 +126,7 @@ final class PostViewController: BaseViewController {
         boostButton.setTitleColor(Constants.darkTextColor, for: .normal)
         boostButton.titleLabel?.font = AppFont.bold(size: 12)
         boostButton.backgroundColor = .clear
-        boostButton.isUserInteractionEnabled = false
+        boostButton.addTarget(self, action: #selector(handleBoostTapped), for: .touchUpInside)
         
         boostDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         boostDescriptionLabel.text = NSLocalizedString("Want to increase the visibility of your post?", comment: "Post boost description")
@@ -132,6 +137,7 @@ final class PostViewController: BaseViewController {
         boostBadgeView.addSubview(boostButton)
         contentCardView.addSubview(boostBadgeView)
         contentCardView.addSubview(boostDescriptionLabel)
+        updateBoostState()
     }
 
     private func configureLocation() {
@@ -171,7 +177,6 @@ final class PostViewController: BaseViewController {
 
     private func configureLayout() {
         NSLayoutConstraint.activate([
-            
             contentCardView.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 10),
             contentCardView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             contentCardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
@@ -249,10 +254,13 @@ final class PostViewController: BaseViewController {
         }
 
         let walletKey = makeWalletKey(for: currentUser)
-        guard WalletKeychainStore.balance(for: walletKey) >= Constants.publishCost else {
-            showToast(message: NSLocalizedString("Insufficient balance", comment: "Post insufficient wallet balance toast"))
-            showWallet()
-            return
+        let shouldBoostPost = isBoostSelected
+        if shouldBoostPost {
+            guard WalletKeychainStore.balance(for: walletKey) >= Constants.publishCost else {
+                showToast(message: NSLocalizedString("Insufficient balance", comment: "Post insufficient wallet balance toast"))
+                showWallet()
+                return
+            }
         }
 
         let imagePaths = selectedImages.compactMap(savePostImage)
@@ -261,10 +269,14 @@ final class PostViewController: BaseViewController {
             return
         }
 
-        guard WalletKeychainStore.deduct(Constants.publishCost, for: walletKey) else {
-            showToast(message: NSLocalizedString("Insufficient balance", comment: "Post insufficient wallet balance toast"))
-            showWallet()
-            return
+        var didDeductBoostCost = false
+        if shouldBoostPost {
+            guard WalletKeychainStore.deduct(Constants.publishCost, for: walletKey) else {
+                showToast(message: NSLocalizedString("Insufficient balance", comment: "Post insufficient wallet balance toast"))
+                showWallet()
+                return
+            }
+            didDeductBoostCost = true
         }
 
         let result = postRepository.createPost(
@@ -272,7 +284,8 @@ final class PostViewController: BaseViewController {
             title: makePostTitle(from: content),
             content: content,
             addressText: addressText,
-            imagePaths: imagePaths
+            imagePaths: imagePaths,
+            isBoosted: shouldBoostPost
         )
 
         switch result {
@@ -283,9 +296,23 @@ final class PostViewController: BaseViewController {
                 self?.dismiss(animated: true)
             }
         case .failure:
-            _ = WalletKeychainStore.add(Constants.publishCost, for: walletKey)
+            if didDeductBoostCost {
+                _ = WalletKeychainStore.add(Constants.publishCost, for: walletKey)
+            }
             showToast(message: NSLocalizedString("Failed to publish post", comment: "Post publish failed toast"))
         }
+    }
+
+    @objc private func handleBoostTapped() {
+        isBoostSelected.toggle()
+    }
+
+    private func updateBoostState() {
+        boostButton.isSelected = isBoostSelected
+        boostBadgeView.backgroundColor = isBoostSelected
+            ? UIColor(red: 0.87, green: 0.90, blue: 0.12, alpha: 1.0)
+            : .white
+        hotImageView.isHidden = !isBoostSelected
     }
 
     private func makeWalletKey(for user: User) -> String {

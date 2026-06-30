@@ -182,9 +182,19 @@ final class CampusViewController: BaseViewController {
             name: .activityDidPublish,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserBlockRelationDidChange),
+            name: .userBlockRelationDidChange,
+            object: nil
+        )
     }
 
     @objc private func handleActivityDidPublish() {
+        loadActivities()
+    }
+
+    @objc private func handleUserBlockRelationDidChange() {
         loadActivities()
     }
 
@@ -198,15 +208,33 @@ final class CampusViewController: BaseViewController {
     }
 
     private func loadActivities() {
-        guard case .success(let databaseActivities) = activityRepository.fetchPublishedActivities(),
-              !databaseActivities.isEmpty else {
+        guard case .success(let databaseActivities) = activityRepository.fetchPublishedActivities() else {
+            activities = []
+            tableView.reloadData()
             return
         }
 
+        let visibleActivities = filterBlockedActivities(databaseActivities)
         AppLoading.show(in: self.view) { [weak self] in
             guard let self = self else { return }
-            activities = databaseActivities.map(makeCampusActivity)
+            activities = visibleActivities.map(makeCampusActivity)
             self.tableView.reloadData()
+        }
+    }
+
+    private func filterBlockedActivities(_ activities: [Activity]) -> [Activity] {
+        guard let currentUser = loadCurrentUser(),
+              case .success(let blockedUsers) = userRepository.fetchBlockedUsers(for: currentUser),
+              !blockedUsers.isEmpty else {
+            return activities
+        }
+
+        let blockedUserIds = Set(blockedUsers.map(\.id))
+        return activities.filter { activity in
+            guard let authorId = activity.author?.id else {
+                return true
+            }
+            return !blockedUserIds.contains(authorId)
         }
     }
 

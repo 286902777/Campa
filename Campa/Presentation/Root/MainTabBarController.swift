@@ -210,6 +210,13 @@ final class MainTabBarController: UITabBarController {
     @objc private func handleItemButtonTapped(_ sender: UIButton) {
         updateSelectedTab(index: sender.tag)
     }
+
+    func switchToProfileTab() {
+        viewControllers?
+            .compactMap { $0 as? UINavigationController }
+            .forEach { $0.popToRootViewController(animated: false) }
+        updateSelectedTab(index: 3)
+    }
 }
 
 extension MainTabBarController: UITabBarControllerDelegate, UINavigationControllerDelegate {

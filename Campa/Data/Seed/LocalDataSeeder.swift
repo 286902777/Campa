@@ -5,7 +5,7 @@ final class LocalDataSeeder {
     static let shared = LocalDataSeeder()
 
     private enum Constants {
-        static let seedVersion = 4
+        static let seedVersion = 5
         static let seedVersionKey = "localDataSeedVersion"
         static let seedMarkerEmail = "maxwell@local.campa"
         static let testUserEmail = "campa_test@gmail.com"
@@ -79,7 +79,7 @@ final class LocalDataSeeder {
         }
 
         makeActivities().forEach { item in
-            let author = usersByEmail[Constants.seedMarkerEmail] ?? savedUsers.first
+            let author = usersByEmail[item.authorEmail] ?? usersByEmail[Constants.seedMarkerEmail] ?? savedUsers.first
             guard let author else { return }
 
             let activity = Activity(context: context)
@@ -334,9 +334,9 @@ final class LocalDataSeeder {
 
     private func makeActivities() -> [SeedActivity] {
         [
-            SeedActivity(title: "Campus Original Art Works Exhibition", startAt: makeDate(month: 7, day: 1, hour: 10), endAt: makeDate(month: 7, day: 5, hour: 10), images: ["e1", "f1"], location: "Hongik University"),
-            SeedActivity(title: "Inter-Class Friendly Basketball Tournament", startAt: makeDate(month: 7, day: 8, hour: 14), endAt: nil, images: ["e2", "f2"], location: "Dongguk University"),
-            SeedActivity(title: "Summer Internship & Career Planning Lecture", startAt: makeDate(month: 7, day: 3, hour: 13), endAt: nil, images: ["e3", "f3"], location: "Sejong University")
+            SeedActivity(authorEmail: Constants.seedMarkerEmail, title: "Campus Original Art Works Exhibition", startAt: makeDate(month: 7, day: 1, hour: 10), endAt: makeDate(month: 7, day: 5, hour: 10), images: ["e1", "f1"], location: "Hongik University"),
+            SeedActivity(authorEmail: "kerr@local.campa", title: "Inter-Class Friendly Basketball Tournament", startAt: makeDate(month: 7, day: 8, hour: 14), endAt: nil, images: ["e2", "f2"], location: "Dongguk University"),
+            SeedActivity(authorEmail: "roman@local.campa", title: "Summer Internship & Career Planning Lecture", startAt: makeDate(month: 7, day: 3, hour: 13), endAt: nil, images: ["e3", "f3"], location: "Sejong University")
         ]
     }
 
@@ -363,6 +363,7 @@ private struct SeedPost {
 }
 
 private struct SeedActivity {
+    let authorEmail: String
     let title: String
     let startAt: Date?
     let endAt: Date?

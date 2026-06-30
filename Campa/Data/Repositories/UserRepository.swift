@@ -1,6 +1,11 @@
 import CoreData
 import Foundation
 
+private enum BlockedFollowDirection: String {
+    case sourceToTarget
+    case targetToSource
+}
+
 final class UserRepository {
     private let context: NSManagedObjectContext
 
@@ -306,6 +311,7 @@ final class UserRepository {
     func addRelation(from sourceUser: User, to targetUser: User, type: UserRelationType) -> Result<UserRelation, PersistenceError> {
         if case .success(true) = hasRelation(from: sourceUser, to: targetUser, type: type) {
             if type == .block {
+                preserveFollowRelationsBeforeBlock(from: sourceUser, to: targetUser)
                 removeFollowRelationsBetween(sourceUser, and: targetUser)
                 NotificationCenter.default.post(name: .userBlockRelationDidChange, object: nil)
             }
@@ -324,6 +330,7 @@ final class UserRepository {
             NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
         }
         if case .success = result, type == .block {
+            preserveFollowRelationsBeforeBlock(from: sourceUser, to: targetUser)
             removeFollowRelationsBetween(sourceUser, and: targetUser)
             NotificationCenter.default.post(name: .userBlockRelationDidChange, object: nil)
         }
@@ -348,6 +355,7 @@ final class UserRepository {
                     NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
                 }
                 if type == .block {
+                    restoreFollowRelationsAfterUnblock(from: sourceUser, to: targetUser)
                     NotificationCenter.default.post(name: .userBlockRelationDidChange, object: nil)
                 }
             }
@@ -397,6 +405,71 @@ final class UserRepository {
         } catch {
             context.rollback()
         }
+    }
+
+    private func preserveFollowRelationsBeforeBlock(from sourceUser: User, to targetUser: User) {
+        let key = blockedFollowSnapshotKey(sourceUser: sourceUser, targetUser: targetUser)
+        guard UserDefaults.standard.stringArray(forKey: key) == nil else {
+            return
+        }
+
+        var directions: [String] = []
+        if case .success(true) = hasRelation(from: sourceUser, to: targetUser, type: .follow) {
+            directions.append(BlockedFollowDirection.sourceToTarget.rawValue)
+        }
+        if case .success(true) = hasRelation(from: targetUser, to: sourceUser, type: .follow) {
+            directions.append(BlockedFollowDirection.targetToSource.rawValue)
+        }
+
+        UserDefaults.standard.set(directions, forKey: key)
+    }
+
+    private func restoreFollowRelationsAfterUnblock(from sourceUser: User, to targetUser: User) {
+        let key = blockedFollowSnapshotKey(sourceUser: sourceUser, targetUser: targetUser)
+        let directions = UserDefaults.standard.stringArray(forKey: key) ?? []
+        UserDefaults.standard.removeObject(forKey: key)
+        guard !directions.isEmpty else {
+            return
+        }
+
+        let now = Date()
+        var didRestore = false
+
+        if directions.contains(BlockedFollowDirection.sourceToTarget.rawValue),
+           case .success(false) = hasRelation(from: sourceUser, to: targetUser, type: .follow) {
+            makeRelation(from: sourceUser, to: targetUser, type: .follow, createdAt: now)
+            didRestore = true
+        }
+
+        if directions.contains(BlockedFollowDirection.targetToSource.rawValue),
+           case .success(false) = hasRelation(from: targetUser, to: sourceUser, type: .follow) {
+            makeRelation(from: targetUser, to: sourceUser, type: .follow, createdAt: now)
+            didRestore = true
+        }
+
+        guard didRestore else {
+            return
+        }
+
+        do {
+            try context.save()
+            NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
+        } catch {
+            context.rollback()
+        }
+    }
+
+    private func makeRelation(from sourceUser: User, to targetUser: User, type: UserRelationType, createdAt: Date) {
+        let relation = UserRelation(context: context)
+        relation.id = UUID()
+        relation.sourceUser = sourceUser
+        relation.targetUser = targetUser
+        relation.type = type.rawValue
+        relation.createdAt = createdAt
+    }
+
+    private func blockedFollowSnapshotKey(sourceUser: User, targetUser: User) -> String {
+        "blockedFollowSnapshot.\(sourceUser.id.uuidString).\(targetUser.id.uuidString)"
     }
 
     private func clearCurrentUserFlag() {

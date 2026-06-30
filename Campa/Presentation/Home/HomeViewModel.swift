@@ -45,4 +45,5 @@ struct HomePost {
     let backgroundColor: UIColor
     let primaryTextColor: UIColor
     let secondaryTextColor: UIColor
+    let isCurrentUserPost: Bool
 }

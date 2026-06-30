@@ -68,6 +68,7 @@ final class PostDetailViewController: BaseViewController {
         configureLayout()
         configureKeyboardHandling()
         applyPost()
+        updateRightButtonVisibility()
         loadComments()
     }
 
@@ -293,7 +294,8 @@ final class PostDetailViewController: BaseViewController {
                 author: comment.author,
                 authorName: comment.author?.nickname ?? NSLocalizedString("Unknown", comment: "Unknown comment author"),
                 content: comment.content,
-                avatarImage: makeAvatarImage(from: comment.author?.avatarLocalPath)
+                avatarImage: makeAvatarImage(from: comment.author?.avatarLocalPath),
+                isCurrentUserComment: comment.author?.id == loadCurrentUser()?.id
             )
         }
         updateComments()
@@ -435,6 +437,10 @@ final class PostDetailViewController: BaseViewController {
         return value.isEmpty ? nil : value
     }
 
+    private func updateRightButtonVisibility() {
+        rightBtn.isHidden = post.author?.id == loadCurrentUser()?.id
+    }
+
     override func rightAction() {
         let viewController = ReportAlertController()
         viewController.modalPresentationStyle = .overFullScreen
@@ -504,6 +510,9 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         cell.onAvatarTapped = { [weak self] in
             self?.showCommentAuthorProfile(comment)
         }
+        cell.onMoreTapped = { [weak self] in
+            self?.showCommentReportAlert(comment)
+        }
         return cell
     }
 
@@ -513,15 +522,72 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         }
 
         if let currentUser = loadCurrentUser(), currentUser.id == author.id {
-            let viewController = ProfileViewController()
-            viewController.hidesBottomBarWhenPushed = true
-            navigationController?.pushViewController(viewController, animated: true)
+            switchToProfileTab()
             return
         }
 
         let viewController = OtherProfileViewController(userId: author.id)
         viewController.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    private func switchToProfileTab() {
+        if let mainTabBarController = tabBarController as? MainTabBarController {
+            mainTabBarController.switchToProfileTab()
+            return
+        }
+
+        if let mainTabBarController = view.window?.rootViewController as? MainTabBarController {
+            mainTabBarController.switchToProfileTab()
+            return
+        }
+
+        let mainTabBarController = MainTabBarController()
+        view.window?.rootViewController = mainTabBarController
+        mainTabBarController.switchToProfileTab()
+    }
+
+    private func showCommentReportAlert(_ comment: PostDetailComment) {
+        let viewController = ReportAlertController()
+        viewController.modalPresentationStyle = .overFullScreen
+        viewController.actionHandler = { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if result {
+                    self.blockCommentAuthor(comment)
+                } else {
+                    let reportViewController = ReportViewController()
+                    self.navigationController?.pushViewController(reportViewController, animated: true)
+                }
+            }
+        }
+        present(viewController, animated: false)
+    }
+
+    private func blockCommentAuthor(_ comment: PostDetailComment) {
+        guard let currentUser = loadCurrentUser() else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        guard let receiverUser = comment.author else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        guard currentUser.id != receiverUser.id else {
+            AppToast.show(message: NSLocalizedString("You cannot block yourself.", comment: "Block self toast"), in: view)
+            return
+        }
+
+        switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
+        case .success:
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
+        case .failure(.duplicateRelation):
+            AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
+        case .failure:
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+        }
     }
 }
 
@@ -530,6 +596,7 @@ private struct PostDetailComment {
     let authorName: String
     let content: String
     let avatarImage: UIImage?
+    let isCurrentUserComment: Bool
 }
 
 private final class PostDetailCommentCell: UITableViewCell {
@@ -537,6 +604,7 @@ private final class PostDetailCommentCell: UITableViewCell {
 
     private let commentView = PostDetailCommentView()
     var onAvatarTapped: (() -> Void)?
+    var onMoreTapped: (() -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -552,12 +620,16 @@ private final class PostDetailCommentCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         onAvatarTapped = nil
+        onMoreTapped = nil
     }
 
     func configure(comment: PostDetailComment) {
         commentView.configure(comment: comment)
         commentView.onAvatarTapped = { [weak self] in
             self?.onAvatarTapped?()
+        }
+        commentView.onMoreTapped = { [weak self] in
+            self?.onMoreTapped?()
         }
     }
 
@@ -584,6 +656,7 @@ private final class PostDetailCommentView: UIView {
     private let contentLabel = UILabel()
     private let moreButton = UIButton(type: .custom)
     var onAvatarTapped: (() -> Void)?
+    var onMoreTapped: (() -> Void)?
 
     init(comment: PostDetailComment? = nil) {
         super.init(frame: .zero)
@@ -624,6 +697,7 @@ private final class PostDetailCommentView: UIView {
 
         moreButton.translatesAutoresizingMaskIntoConstraints = false
         moreButton.setImage(UIImage(named: "more_gray") ?? UIImage(systemName: "ellipsis"), for: .normal)
+        moreButton.addTarget(self, action: #selector(handleMoreTapped), for: .touchUpInside)
 
         addSubview(avatarImageView)
         addSubview(nameLabel)
@@ -660,10 +734,15 @@ private final class PostDetailCommentView: UIView {
         avatarImageView.image = comment.avatarImage ?? UIImage(named: "muser")
         nameLabel.text = comment.authorName
         contentLabel.text = comment.content
+        moreButton.isHidden = comment.isCurrentUserComment
     }
 
     @objc private func handleAvatarTapped() {
         onAvatarTapped?()
+    }
+
+    @objc private func handleMoreTapped() {
+        onMoreTapped?()
     }
 }
 

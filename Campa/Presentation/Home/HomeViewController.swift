@@ -8,6 +8,7 @@ final class HomeViewController: BaseViewController {
         static let mutedTextColor = UIColor(red: 0.45, green: 0.37, blue: 0.32, alpha: 1.0)
         static let purpleColor = UIColor(red: 0.72, green: 0.62, blue: 0.97, alpha: 1.0)
         static let limeColor = UIColor(red: 0.86, green: 0.90, blue: 0.12, alpha: 1.0)
+        static let hotLikeThreshold: Int32 = 300
     }
 
     private let viewModel: HomeViewModel
@@ -281,15 +282,29 @@ final class HomeViewController: BaseViewController {
         }
 
         if let currentUser = loadCurrentUser(), currentUser.id == author.id {
-            let viewController = ProfileViewController()
-            viewController.hidesBottomBarWhenPushed = true
-            navigationController?.pushViewController(viewController, animated: true)
+            switchToProfileTab()
             return
         }
 
         let viewController = OtherProfileViewController(userId: author.id)
         viewController.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    private func switchToProfileTab() {
+        if let mainTabBarController = tabBarController as? MainTabBarController {
+            mainTabBarController.switchToProfileTab()
+            return
+        }
+
+        if let mainTabBarController = view.window?.rootViewController as? MainTabBarController {
+            mainTabBarController.switchToProfileTab()
+            return
+        }
+
+        let mainTabBarController = MainTabBarController()
+        view.window?.rootViewController = mainTabBarController
+        mainTabBarController.switchToProfileTab()
     }
 
     private func loadPosts() {
@@ -373,10 +388,11 @@ final class HomeViewController: BaseViewController {
             avatarImage: makeAvatarImage(from: author?.avatarLocalPath),
             heroImage: images.first,
             thumbnailImages: images,
-            isHot: index.isMultiple(of: 3),
+            isHot: post.likeCount >= Constants.hotLikeThreshold,
             backgroundColor: usePurpleStyle ? Constants.purpleColor : Constants.limeColor,
             primaryTextColor: primaryTextColor,
-            secondaryTextColor: secondaryTextColor
+            secondaryTextColor: secondaryTextColor,
+            isCurrentUserPost: author?.id == loadCurrentUser()?.id
         )
     }
 
@@ -597,6 +613,7 @@ private final class HomePostTableViewCell: UITableViewCell {
         bodyLabel.textColor = post.primaryTextColor
         heroImageView.image = post.heroImage ?? UIImage(named: "photo")
         hotImageView.isHidden = !post.isHot
+        moreButton.isHidden = post.isCurrentUserPost
 
         let shouldExpandHero = post.thumbnailImages.count <= 1
         thumbnailsStackView.isHidden = shouldExpandHero

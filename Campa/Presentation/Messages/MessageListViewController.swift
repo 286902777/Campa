@@ -16,6 +16,7 @@ final class MessageListViewController: BaseViewController {
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let emptyView = EmptyView()
     private let starContainerView = UIImageView()
+    private var hasLoadedConversations = false
 
     init(
         viewModel: MessageListViewModel = MessageListViewModel(),
@@ -136,12 +137,22 @@ final class MessageListViewController: BaseViewController {
             return isMutualFollow(between: currentUser, and: displayUser)
         }
 
-        self.conversations = mutualFollowConversations
-        AppLoading.show(in: self.view) { [weak self] in
-            guard let self = self else { return }
+        let updateList = { [weak self] in
+            guard let self else { return }
+            self.conversations = mutualFollowConversations
             self.messages = mutualFollowConversations.map(self.makeMessageItem(from:))
             self.tableView.reloadData()
             self.updateEmptyState()
+        }
+
+        guard !hasLoadedConversations else {
+            updateList()
+            return
+        }
+
+        hasLoadedConversations = true
+        AppLoading.show(in: view) {
+            updateList()
         }
     }
 
@@ -252,6 +263,7 @@ extension MessageListViewController: UITableViewDataSource, UITableViewDelegate 
         }
 
         let vc = MessagesViewController(conversation: conversations[indexPath.row])
+        vc.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(vc, animated: true)
     }
 }
