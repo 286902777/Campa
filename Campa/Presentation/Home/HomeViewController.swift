@@ -72,6 +72,12 @@ final class HomeViewController: BaseViewController {
             name: .postDidPublish,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserFollowRelationDidChange),
+            name: .userFollowRelationDidChange,
+            object: nil
+        )
     }
 
     private func configureHeader() {
@@ -96,10 +102,11 @@ final class HomeViewController: BaseViewController {
         segmentStackView.spacing = 24
 
         segmentButtons = viewModel.segments.enumerated().map { index, title in
-            let button = UIButton(type: .system)
+            let button = UIButton(type: .custom)
             button.tag = index
             button.setTitle(title, for: .normal)
             button.titleLabel?.font = AppFont.semibold(size: 12)
+            button.adjustsImageWhenHighlighted = false
             button.contentHorizontalAlignment = .left
             button.addTarget(self, action: #selector(segmentButtonTapped(_:)), for: .touchUpInside)
             return button
@@ -163,6 +170,7 @@ final class HomeViewController: BaseViewController {
     }
 
     @objc private func segmentButtonTapped(_ sender: UIButton) {
+        sender.isHighlighted = false
         let newIndex = sender.tag
         guard newIndex != selectedIndex, pageControllers.indices.contains(newIndex) else {
             return
@@ -171,19 +179,24 @@ final class HomeViewController: BaseViewController {
         let direction: UIPageViewController.NavigationDirection = newIndex > selectedIndex ? .forward : .reverse
         selectedIndex = newIndex
         updateSegmentSelection()
-        pageViewController.setViewControllers([pageControllers[newIndex]], direction: direction, animated: true)
+        pageViewController.setViewControllers([pageControllers[newIndex]], direction: direction, animated: false)
     }
 
     private func updateSegmentSelection() {
-        segmentButtons.enumerated().forEach { index, button in
-            let isSelected = index == selectedIndex
-            let title = viewModel.segments[index]
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: AppFont.semibold(size: 12),
-                .foregroundColor: Constants.darkTextColor,
-                .underlineStyle: isSelected ? NSUnderlineStyle.single.rawValue : 0
-            ]
-            button.setAttributedTitle(NSAttributedString(string: title, attributes: attributes), for: .normal)
+        UIView.performWithoutAnimation {
+            segmentButtons.enumerated().forEach { index, button in
+                let isSelected = index == selectedIndex
+                let title = viewModel.segments[index]
+                let attributes: [NSAttributedString.Key: Any] = [
+                    .font: AppFont.semibold(size: 12),
+                    .foregroundColor: Constants.darkTextColor,
+                    .underlineStyle: isSelected ? NSUnderlineStyle.single.rawValue : 0
+                ]
+                let attributedTitle = NSAttributedString(string: title, attributes: attributes)
+                button.setAttributedTitle(attributedTitle, for: .normal)
+                button.setAttributedTitle(attributedTitle, for: .highlighted)
+                button.layoutIfNeeded()
+            }
         }
     }
 
@@ -311,6 +324,10 @@ final class HomeViewController: BaseViewController {
     }
 
     @objc private func handlePostDidPublish() {
+        loadPosts()
+    }
+
+    @objc private func handleUserFollowRelationDidChange() {
         loadPosts()
     }
 

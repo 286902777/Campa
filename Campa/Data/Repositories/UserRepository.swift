@@ -315,7 +315,11 @@ final class UserRepository {
         relation.type = type.rawValue
         relation.createdAt = Date()
 
-        return saveAndReturn(relation)
+        let result = saveAndReturn(relation)
+        if case .success = result, type == .follow {
+            NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
+        }
+        return result
     }
 
     func removeRelation(from sourceUser: User, to targetUser: User, type: UserRelationType) -> Result<Void, PersistenceError> {
@@ -332,6 +336,9 @@ final class UserRepository {
             if let relation = try context.fetch(request).first {
                 context.delete(relation)
                 try context.save()
+                if type == .follow {
+                    NotificationCenter.default.post(name: .userFollowRelationDidChange, object: nil)
+                }
             }
             return .success(())
         } catch {

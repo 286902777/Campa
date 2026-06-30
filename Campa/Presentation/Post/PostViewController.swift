@@ -16,11 +16,11 @@ final class PostViewController: BaseViewController {
     private let collectionView: UICollectionView
     private let boostBadgeView = UIView()
     private let hotImageView = UIImageView()
-    private let boostButton = UIButton(type: .system)
+    private let boostButton = UIButton(type: .custom)
     private let boostDescriptionLabel = UILabel()
     private let locationIconView = UIImageView()
     private let locationLabel = UILabel()
-    private let publishButton = UIButton(type: .system)
+    private let publishButton = UIButton(type: .custom)
     private let userRepository: UserRepository
     private let postRepository: PostRepository
 
@@ -129,7 +129,8 @@ final class PostViewController: BaseViewController {
         boostButton.setTitleColor(Constants.darkTextColor, for: .normal)
         boostButton.titleLabel?.font = AppFont.bold(size: 12)
         boostButton.backgroundColor = .clear
-
+        boostButton.isUserInteractionEnabled = false
+        
         boostDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         boostDescriptionLabel.text = NSLocalizedString("Want to increase the visibility of your post?", comment: "Post boost description")
         boostDescriptionLabel.font = AppFont.medium(size: 9)
@@ -200,15 +201,15 @@ final class PostViewController: BaseViewController {
             collectionView.trailingAnchor.constraint(equalTo: textView.trailingAnchor),
             collectionView.heightAnchor.constraint(equalToConstant: self.collH),
 
-            boostBadgeView.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 12),
+            boostBadgeView.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 36),
             boostBadgeView.leadingAnchor.constraint(equalTo: textView.leadingAnchor),
             boostBadgeView.widthAnchor.constraint(equalToConstant: 82),
             boostBadgeView.heightAnchor.constraint(equalToConstant: 30),
 
             hotImageView.trailingAnchor.constraint(equalTo: boostBadgeView.trailingAnchor, constant: 3),
-            hotImageView.bottomAnchor.constraint(equalTo: boostBadgeView.topAnchor, constant: 8),
-            hotImageView.widthAnchor.constraint(equalToConstant: 36),
-            hotImageView.heightAnchor.constraint(equalToConstant: 18),
+            hotImageView.bottomAnchor.constraint(equalTo: boostBadgeView.topAnchor, constant: 20),
+            hotImageView.widthAnchor.constraint(equalToConstant: 43),
+            hotImageView.heightAnchor.constraint(equalToConstant: 43),
 
             boostButton.topAnchor.constraint(equalTo: boostBadgeView.topAnchor),
             boostButton.leadingAnchor.constraint(equalTo: boostBadgeView.leadingAnchor),

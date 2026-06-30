@@ -69,7 +69,7 @@ final class WalletViewController: BaseViewController {
         if let vs = self.navigationController?.viewControllers, vs.count > 1 {
             self.navigationController?.popViewController(animated: true)
         } else {
-            self.dismiss(animated: true)
+            self.dismiss(animated: false)
         }
     }
     private func configureHeader() {
@@ -142,6 +142,15 @@ final class WalletViewController: BaseViewController {
 
     @MainActor
     private func purchase(product: WalletProduct) async {
+        AppLoading.show(
+            in: view,
+            message: NSLocalizedString("Processing...", comment: "Wallet purchase loading message"),
+            autoDismiss: false
+        )
+        defer {
+            AppLoading.dismiss(from: view)
+        }
+
         do {
             let storeProduct = try await loadStoreProduct(productId: product.productId)
             let result = try await storeProduct.purchase()

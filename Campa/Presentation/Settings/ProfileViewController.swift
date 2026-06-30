@@ -429,7 +429,7 @@ final class ProfileViewController: BaseViewController {
 
     private func apply(user: User) {
         nameLabel.text = user.nickname
-        schoolLabel.text = user.school ?? viewModel.school
+        schoolLabel.text = schoolCleanedText(user.location) ?? viewModel.school
         postNameLabel.text = user.nickname
 
         let avatarImage = makeAvatarImage(from: user.avatarLocalPath)
@@ -453,6 +453,11 @@ final class ProfileViewController: BaseViewController {
 
     private func defaultAvatarImage() -> UIImage? {
         UIImage(named: "muser") ?? UIImage(named: "user_icon")
+    }
+
+    private func schoolCleanedText(_ text: String?) -> String? {
+        let value = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
     }
 
     private func loadFirstPost(for user: User) {

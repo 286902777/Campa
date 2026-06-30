@@ -107,7 +107,10 @@ final class ActivityRepository {
     func fetchPublishedActivities() -> Result<[Activity], PersistenceError> {
         let request = Activity.fetchRequest()
         request.predicate = NSPredicate(format: "status == %@", ActivityStatus.published.rawValue)
-        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "startAt", ascending: false),
+            NSSortDescriptor(key: "createdAt", ascending: false)
+        ]
 
         do {
             return .success(try context.fetch(request))

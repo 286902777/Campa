@@ -87,7 +87,7 @@ final class ActivityCreateViewController: BaseViewController {
         datePicker.addTarget(self, action: #selector(handleDateChanged), for: .valueChanged)
         dateTextField.inputView = datePicker
 
-        let downIconView = UIImageView(image: UIImage(named: "down"))
+        let downIconView = UIImageView(image: UIImage(named: "down_p"))
         downIconView.contentMode = .scaleAspectFit
         downIconView.frame = CGRect(x: 10, y: 4, width: 14, height: 10)
         let downIconContainerView = UIView(frame: CGRect(x: 0, y: 0, width: 34, height: 18))
