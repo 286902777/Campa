@@ -8,7 +8,7 @@ extension UIImage {
     ) -> UIImage? {
         let value = storedPath?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !value.isEmpty else {
-            return UIImage(named: "muser")
+            return fallbackName.flatMap { UIImage(named: $0) } ?? UIImage(named: "muser")
         }
 
         let fileURL: URL?

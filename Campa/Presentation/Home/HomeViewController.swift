@@ -205,13 +205,18 @@ final class HomeViewController: BaseViewController {
     }
 
     private func blockReceiverUser(post: HomePost) {
-        guard  let currentUser = loadCurrentUser() else {
+        guard let currentUser = loadCurrentUser() else {
             AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
-             return
+            return
         }
-        guard let uid = post.sourcePost?.id,
-              case .success(let receiverUser) = userRepository.fetchUser(id: uid) else {
-             AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+
+        guard let receiverUser = post.sourcePost?.author else {
+            AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
+            return
+        }
+
+        guard currentUser.id != receiverUser.id else {
+            AppToast.show(message: NSLocalizedString("You cannot block yourself.", comment: "Block self toast"), in: view)
             return
         }
 

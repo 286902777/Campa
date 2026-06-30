@@ -414,7 +414,7 @@ final class PostDetailViewController: BaseViewController {
     }
 
     private func makeAvatarImage(from storedPath: String?) -> UIImage? {
-        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars", fallbackName: "user_icon")
+        UIImage.sandboxOrAssetImage(named: storedPath, documentsSubdirectory: "Avatars", fallbackName: "muser")
     }
 
     private func cleanedText(_ text: String?) -> String? {
@@ -578,7 +578,7 @@ private final class PostDetailCommentView: UIView {
     }
 
     func configure(comment: PostDetailComment) {
-        avatarImageView.image = comment.avatarImage ?? UIImage(named: "user_icon")
+        avatarImageView.image = comment.avatarImage ?? UIImage(named: "muser")
         nameLabel.text = comment.authorName
         contentLabel.text = comment.content
     }

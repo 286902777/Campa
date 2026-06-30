@@ -303,12 +303,8 @@ final class PostViewController: BaseViewController {
 
     private func showWallet() {
         let viewController = WalletViewController()
-        viewController.hidesBottomBarWhenPushed = true
-        if let navigationController {
-            navigationController.pushViewController(viewController, animated: true)
-        } else {
-            present(UINavigationController(rootViewController: viewController), animated: true)
-        }
+        viewController.modalPresentationStyle = .overFullScreen
+        present(viewController, animated: true)
     }
 
     private func isGuestUser(_ user: User) -> Bool {

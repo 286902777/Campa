@@ -47,7 +47,6 @@ final class WalletViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        configureView()
         configureNavigation()
         configureHeader()
         configureProducts()
@@ -61,15 +60,18 @@ final class WalletViewController: BaseViewController {
         updateBalance()
     }
 
-    private func configureView() {
-        view.backgroundColor = Constants.pageBackgroundColor
-    }
-
     private func configureNavigation() {
         changeNavbar(.backTiltle)
         self.setTitleAndRight(title: "Wallet", right: nil)
     }
 
+    override func backAction() {
+        if let vs = self.navigationController?.viewControllers, vs.count > 1 {
+            self.navigationController?.popViewController(animated: true)
+        } else {
+            self.dismiss(animated: true)
+        }
+    }
     private func configureHeader() {
         headerBackgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         headerBackgroundImageView.image = UIImage(named: "bag_bg")
