@@ -227,6 +227,12 @@ final class ActivityCreateViewController: BaseViewController {
             return
         }
 
+        guard !isGuestUser(currentUser) else {
+            showToast(message: NSLocalizedString("Please login first.", comment: "Guest publish login toast"))
+            showLogin()
+            return
+        }
+
         let imagePaths = selectedImages.compactMap(saveActivityImage)
         guard imagePaths.count == selectedImages.count else {
             showToast(message: NSLocalizedString("Failed to save activity images", comment: "Activity image save failed toast"))
@@ -253,6 +259,28 @@ final class ActivityCreateViewController: BaseViewController {
             }
         case .failure:
             showToast(message: NSLocalizedString("Failed to publish activity", comment: "Activity publish failed toast"))
+        }
+    }
+
+    private func isGuestUser(_ user: User) -> Bool {
+        if let guestUserId = UserDefaults.standard.string(forKey: GuestUserIdKey),
+           guestUserId == user.id.uuidString {
+            return true
+        }
+
+        return user.email?.lowercased().hasSuffix("@guest.campa") == true
+    }
+
+    private func showLogin() {
+        UserDefaults.standard.removeObject(forKey: CurrentUserIdKey)
+
+        guard let window = view.window else {
+            navigationController?.pushViewController(AuthEntryViewController(), animated: true)
+            return
+        }
+
+        UIView.transition(with: window, duration: 0.25, options: .transitionCrossDissolve) {
+            window.rootViewController = UINavigationController(rootViewController: AuthEntryViewController())
         }
     }
 
