@@ -289,16 +289,33 @@ final class PostDetailViewController: BaseViewController {
             return
         }
 
-        comments = postComments.map { comment in
-            PostDetailComment(
-                author: comment.author,
-                authorName: comment.author?.nickname ?? NSLocalizedString("Unknown", comment: "Unknown comment author"),
-                content: comment.content,
-                avatarImage: makeAvatarImage(from: comment.author?.avatarLocalPath),
-                isCurrentUserComment: comment.author?.id == loadCurrentUser()?.id
-            )
-        }
+        let blockedUserIds = blockedUserIdsForCurrentUser()
+        comments = postComments
+            .filter { comment in
+                guard let authorId = comment.author?.id else {
+                    return true
+                }
+                return !blockedUserIds.contains(authorId)
+            }
+            .map { comment in
+                PostDetailComment(
+                    author: comment.author,
+                    authorName: comment.author?.nickname ?? NSLocalizedString("Unknown", comment: "Unknown comment author"),
+                    content: comment.content,
+                    avatarImage: makeAvatarImage(from: comment.author?.avatarLocalPath),
+                    isCurrentUserComment: comment.author?.id == loadCurrentUser()?.id
+                )
+            }
         updateComments()
+    }
+
+    private func blockedUserIdsForCurrentUser() -> Set<UUID> {
+        guard let currentUser = loadCurrentUser(),
+              case .success(let blockedUsers) = userRepository.fetchBlockedUsers(for: currentUser) else {
+            return []
+        }
+
+        return Set(blockedUsers.map(\.id))
     }
 
     private func updateComments() {
@@ -476,8 +493,10 @@ final class PostDetailViewController: BaseViewController {
 
         switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
         case .success:
+            loadComments()
             AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
         case .failure(.duplicateRelation):
+            loadComments()
             AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
         case .failure:
             AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
@@ -582,8 +601,10 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
 
         switch userRepository.addRelation(from: currentUser, to: receiverUser, type: .block) {
         case .success:
+            loadComments()
             AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user success toast"), in: view)
         case .failure(.duplicateRelation):
+            loadComments()
             AppToast.show(message: NSLocalizedString("User has been blocked.", comment: "Block user duplicate toast"), in: view)
         case .failure:
             AppToast.show(message: NSLocalizedString("Failed to block user.", comment: "Block user failure toast"), in: view)
