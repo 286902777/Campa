@@ -20,14 +20,17 @@ final class WalletViewController: BaseViewController {
     private let userRepository: UserRepository
     private var selectedProductIndex = 0
     private var storeProducts: [String: StoreKit.Product] = [:]
-
     private let products: [WalletProduct] = [
-        WalletProduct(productId: "lvbsvhxcgcrvesor", amount: "400", price: "$0.99"),
-        WalletProduct(productId: "dxismgcwewhrtezo", amount: "800", price: "$4.99"),
-        WalletProduct(productId: "khtxlcejaxmqcsra", amount: "1780", price: "$9.99"),
-        WalletProduct(productId: "yadwwvxspgxwlndb", amount: "2450", price: "$19.99"),
-        WalletProduct(productId: "qnrcuelbtiuflyky", amount: "5150", price: "$49.99"),
-        WalletProduct(productId: "ymohxnvpkqxutvab", amount: "10800", price: "$99.99")
+        WalletProduct(productId: "mumyizhsdfvsbpbb", amount: "400", price: "$0.99"),
+        WalletProduct(productId: "uiowzrkitnxdaqvb", amount: "800", price: "$1.99"),
+        WalletProduct(productId: "kjhgfdsazxcvbnmq", amount: "1780", price: "$3.99"),
+        WalletProduct(productId: "yggwhyexpjawrqzk", amount: "2450", price: "$4.99"),
+        WalletProduct(productId: "yuoficglaacdnrci", amount: "5150", price: "$ 9.99"),
+        WalletProduct(productId: "diijztiisphqpmpv", amount: "10800", price: "$19.99"),
+        WalletProduct(productId: "sazwsxedcrfvtgby", amount: "14900", price: "$ 29.99"),
+        WalletProduct(productId: "dleeglukfmsofayo", amount: "29400", price: "$ 49.99"),
+        WalletProduct(productId: "xkpwbxmqzfgvjrhs", amount: "34500", price: "$ 69.99"),
+        WalletProduct(productId: "adlvqzvpnyfuojhc", amount: "63700", price: "$ 99.99"),
     ]
 
     init(userRepository: UserRepository = UserRepository()) {
